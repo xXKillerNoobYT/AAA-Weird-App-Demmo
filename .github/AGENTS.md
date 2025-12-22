@@ -70,7 +70,6 @@ This documentation describes the **5-Agent AI Orchestration System** built for G
 **YAML Metadata:**
 ```yaml
 name: Smart Plan
-version: 1.0.0
 description: Intelligent planning agent with vagueness detection (0-1 scoring), QA survey generation, context gathering, plan generation, and handoff management
 argument-hint: Describe your goal or problem to plan
 tools: [vscode, execute, read, edit, search, web, mcp_docker/*, agent, memory, todo]
@@ -108,7 +107,6 @@ handoffs:
 **YAML Metadata:**
 ```yaml
 name: Smart Execute
-version: 1.0.0
 description: Execution agent that loads plans, executes steps using tools, edits Plan/Review/FullAuto prompts, records observations
 argument-hint: Execute plan with full context
 tools: [vscode, execute, read, edit, search, web, mcp_docker/*, pylance-mcp-server/*, agent, memory, todo, etc.]
@@ -145,7 +143,6 @@ handoffs:
 **YAML Metadata:**
 ```yaml
 name: Smart Review
-version: 1.0.0
 description: Review agent that analyzes execution stalls, performs root-cause analysis, updates Smart Execute prompt, proposes replanning
 argument-hint: Review execution results and propose improvements
 tools: [vscode, execute, read, edit, search, web, agent, memory, todo]
@@ -181,7 +178,6 @@ handoffs:
 **YAML Metadata:**
 ```yaml
 name: Smart Prep Cloud
-version: 1.0.0
 description: Prepares cloud handoff artifacts including issue generation, environment validation, Cloud Confidence scoring
 tools: [file_search, read_file, semantic_search, mcp_mcp_docker_issue_write, mcp_mcp_docker_add_observations]
 handoffs:
@@ -229,7 +225,6 @@ Where: $w_i = 0.20$ (equal weight), and signals are:
 **YAML Metadata:**
 ```yaml
 name: Full Auto
-version: 1.0.0
 description: Orchestrator agent that chains Smart Plan → Execute → Review until completion, validates version sync, manages workflow autonomously
 argument-hint: Fully automate task from planning to completion
 tools: [vscode, execute, read, edit, search, web, agent, mcp_docker/*, memory, todo, etc.]
@@ -693,7 +688,7 @@ Manual recovery for stalled step:
 
 ---
 
-### Issue 3: Prompt Editing Creates Conflicts
+### Issue 3: Frontmatter Field Mismatch or Prompt Editing Conflicts
 
 **Symptom:** After Smart Execute runs, one of the edited agent files (Smart Plan, Review, FullAuto) is broken. Syntax errors, missing sections, version mismatch.
 
@@ -736,16 +731,13 @@ Manual recovery for stalled step:
    Edit the agent file manually to apply change
 ```
 
-**If Version Mismatch:**
+**If Frontmatter Contains Unsupported Fields:**
 ```
-Full Auto detected version != 1.0.0
-1. All 4 agent files must have version: 1.0.0
-2. After prompt edits, version should remain 1.0.0
-3. If version changed, revert to 1.0.0
-
-Verify with command:
-grep "version: " .github/agents/*.agent.md
-# All should show version: 1.0.0
+Symptom: Lint errors about unknown frontmatter keys (e.g., version)
+Action:
+   1. Remove unsupported keys like `version`
+   2. Keep only: name, description, tools, handoffs, argument-hint
+   3. Re-run lint/validation
 ```
 
 **Recovery Action:**
@@ -772,6 +764,53 @@ To recover from prompt edit failure:
      "reason": "Edit failed - restored from backup",
      "timestamp": "2025-..."
    }
+```
+
+---
+
+### 6. Agent Builder & Updater
+**File:** `.github/agents/Agent Builder & Updater.agent.md`
+
+**Purpose:** Meta-agent to create and update other agents consistently, enforce guardrails, and batch-normalize metadata.
+
+**YAML Metadata:**
+```yaml
+name: Agent Builder & Updater
+description: Builds/updates agents, enforces route-only/review-only/execute-only guardrails, normalizes frontmatter
+argument-hint: Specify agent changes to apply
+tools: [vscode, read, edit, search, memory]
+handoffs:
+   - label: Back to Full Auto
+      agent: Full Auto
+      prompt: Agent build/update complete
+   - label: Replan
+      agent: Smart Plan
+      prompt: Plan follow-up tasks based on changes
+```
+
+---
+
+### 7. Tool Builder
+**File:** `.github/agents/Tool Builder.agent.md`
+
+**Purpose:** Designs and implements MCP tool integrations; validates tool availability; recommends planning or review when scope is unclear.
+
+**YAML Metadata:**
+```yaml
+name: Tool Builder
+description: Creates/updates tools, ensures allowlist consistency, and proposes next steps (plan/review)
+argument-hint: Describe the tool to build or update
+tools: [vscode, read, edit, search, memory]
+handoffs:
+   - label: Back to Full Auto
+      agent: Full Auto
+      prompt: Tool build/update complete
+   - label: Replan
+      agent: Smart Plan
+      prompt: Create tasks to integrate the new tool
+   - label: Review
+      agent: Smart Review
+      prompt: Analyze issues found during tool validation
 ```
 
 ---
@@ -935,6 +974,6 @@ To improve Cloud Confidence:
 
 ---
 
-**Last Updated:** December 21, 2025  
+**Last Updated:** December 22, 2025  
 **Version:** 1.0.0  
 **Maintained By:** Smart Execute Agent

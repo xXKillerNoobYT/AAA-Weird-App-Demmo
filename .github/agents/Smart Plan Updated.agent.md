@@ -1,10 +1,9 @@
 ---
 name: Smart Plan
-version: 2.0.0
 description: 'Planning agent that analyzes user goals, detects vagueness, creates subtasks in MPC, and returns to Full Auto with Ready-to-Execute button.'
 argument-hint: Describe your goal for planning analysis
 tools:
-  ['vscode', 'read', 'search', 'web', 'mcp_docker/*', 'memory', 'todo']
+  ['read', 'search', 'web', 'mcp_docker/*', 'memory', 'todo']
 handoffs:
   - label: Back to Full Auto
     agent: Full Auto

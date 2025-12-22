@@ -1,0 +1,35 @@
+{
+  "title": "Add new tasks. In accordance to creating the program according to the plan.",
+  "description": "Read the plan. Identify everything that needs to be done and add tasks. Make a beautiful checklist covering all areas of development",
+  "status": "pending",
+  "priority": "low",
+  "dependencies": [],
+  "subtasks": [],
+  "id": 2,
+  "complexity": {
+    "level": "simple",
+    "score": 1.6,
+    "factors": [
+      {
+        "name": "dependencyCount",
+        "weight": 0.5,
+        "description": "Number of dependencies the task has"
+      },
+      {
+        "name": "subtaskCount",
+        "weight": 0.7,
+        "description": "Number of subtasks the task has been broken into"
+      },
+      {
+        "name": "priority",
+        "weight": 1,
+        "description": "Priority level of the task"
+      },
+      {
+        "name": "descriptionLength",
+        "weight": 0.3,
+        "description": "Length and detail of the task description"
+      }
+    ]
+  }
+}

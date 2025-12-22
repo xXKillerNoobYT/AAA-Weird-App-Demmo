@@ -1,0 +1,36 @@
+{
+  "id": 7,
+  "title": "Implement user interface",
+  "description": "Design and develop the user interface for the application.",
+  "status": "pending",
+  "priority": "low",
+  "dependencies": [],
+  "subtasks": [],
+  "details": "Ensure responsiveness and accessibility.",
+  "complexity": {
+    "level": "simple",
+    "score": 1.3,
+    "factors": [
+      {
+        "name": "dependencyCount",
+        "weight": 0.5,
+        "description": "Number of dependencies the task has"
+      },
+      {
+        "name": "subtaskCount",
+        "weight": 0.7,
+        "description": "Number of subtasks the task has been broken into"
+      },
+      {
+        "name": "priority",
+        "weight": 1,
+        "description": "Priority level of the task"
+      },
+      {
+        "name": "descriptionLength",
+        "weight": 0.3,
+        "description": "Length and detail of the task description"
+      }
+    ]
+  }
+}

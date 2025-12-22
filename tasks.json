@@ -1,0 +1,268 @@
+[
+  {
+    "title": "Make requirements document.",
+    "description": "And all tasks that need to be done for. Easy task selection.",
+    "status": "in-progress",
+    "priority": "high",
+    "dependencies": [],
+    "subtasks": [
+      {
+        "title": "Gather project requirements",
+        "status": "pending",
+        "id": 1
+      },
+      {
+        "title": "Organize requirements into sections",
+        "status": "pending",
+        "id": 2
+      },
+      {
+        "title": "Draft and review the document",
+        "status": "pending",
+        "id": 3
+      }
+    ],
+    "id": 1,
+    "complexity": {
+      "level": "moderate",
+      "score": 5.3999999999999995,
+      "factors": [
+        {
+          "name": "dependencyCount",
+          "weight": 0.5,
+          "description": "Number of dependencies the task has"
+        },
+        {
+          "name": "subtaskCount",
+          "weight": 0.7,
+          "description": "Number of subtasks the task has been broken into"
+        },
+        {
+          "name": "priority",
+          "weight": 1,
+          "description": "Priority level of the task"
+        },
+        {
+          "name": "descriptionLength",
+          "weight": 0.3,
+          "description": "Length and detail of the task description"
+        }
+      ]
+    }
+  },
+  {
+    "title": "Add new tasks. In accordance to creating the program according to the plan.",
+    "description": "Read the plan. Identify everything that needs to be done and add tasks. Make a beautiful checklist covering all areas of development",
+    "status": "pending",
+    "priority": "low",
+    "dependencies": [],
+    "subtasks": [],
+    "id": 2,
+    "complexity": {
+      "level": "simple",
+      "score": 1.6,
+      "factors": [
+        {
+          "name": "dependencyCount",
+          "weight": 0.5,
+          "description": "Number of dependencies the task has"
+        },
+        {
+          "name": "subtaskCount",
+          "weight": 0.7,
+          "description": "Number of subtasks the task has been broken into"
+        },
+        {
+          "name": "priority",
+          "weight": 1,
+          "description": "Priority level of the task"
+        },
+        {
+          "name": "descriptionLength",
+          "weight": 0.3,
+          "description": "Length and detail of the task description"
+        }
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "title": "Design system architecture",
+    "description": "Create a detailed system architecture diagram outlining components, data flow, and interactions.",
+    "status": "pending",
+    "priority": "high",
+    "dependencies": [],
+    "subtasks": [],
+    "details": "Focus on scalability and modularity.",
+    "complexity": {
+      "level": "simple",
+      "score": 3.3,
+      "factors": [
+        {
+          "name": "dependencyCount",
+          "weight": 0.5,
+          "description": "Number of dependencies the task has"
+        },
+        {
+          "name": "subtaskCount",
+          "weight": 0.7,
+          "description": "Number of subtasks the task has been broken into"
+        },
+        {
+          "name": "priority",
+          "weight": 1,
+          "description": "Priority level of the task"
+        },
+        {
+          "name": "descriptionLength",
+          "weight": 0.3,
+          "description": "Length and detail of the task description"
+        }
+      ]
+    }
+  },
+  {
+    "id": 4,
+    "title": "Set up database schema",
+    "description": "Define and implement the database schema based on the system requirements.",
+    "status": "pending",
+    "priority": "high",
+    "dependencies": [],
+    "subtasks": [],
+    "details": "Ensure normalization and support for future scalability.",
+    "complexity": {
+      "level": "simple",
+      "score": 3.3,
+      "factors": [
+        {
+          "name": "dependencyCount",
+          "weight": 0.5,
+          "description": "Number of dependencies the task has"
+        },
+        {
+          "name": "subtaskCount",
+          "weight": 0.7,
+          "description": "Number of subtasks the task has been broken into"
+        },
+        {
+          "name": "priority",
+          "weight": 1,
+          "description": "Priority level of the task"
+        },
+        {
+          "name": "descriptionLength",
+          "weight": 0.3,
+          "description": "Length and detail of the task description"
+        }
+      ]
+    }
+  },
+  {
+    "id": 5,
+    "title": "Develop API endpoints",
+    "description": "Implement RESTful API endpoints for core system functionalities.",
+    "status": "pending",
+    "priority": "medium",
+    "dependencies": [],
+    "subtasks": [],
+    "details": "Follow best practices for API design and include proper documentation.",
+    "complexity": {
+      "level": "simple",
+      "score": 2.3,
+      "factors": [
+        {
+          "name": "dependencyCount",
+          "weight": 0.5,
+          "description": "Number of dependencies the task has"
+        },
+        {
+          "name": "subtaskCount",
+          "weight": 0.7,
+          "description": "Number of subtasks the task has been broken into"
+        },
+        {
+          "name": "priority",
+          "weight": 1,
+          "description": "Priority level of the task"
+        },
+        {
+          "name": "descriptionLength",
+          "weight": 0.3,
+          "description": "Length and detail of the task description"
+        }
+      ]
+    }
+  },
+  {
+    "id": 6,
+    "title": "Integrate unit testing framework",
+    "description": "Set up a unit testing framework to ensure code quality and reliability.",
+    "status": "pending",
+    "priority": "medium",
+    "dependencies": [],
+    "subtasks": [],
+    "details": "Choose a framework compatible with the tech stack.",
+    "complexity": {
+      "level": "simple",
+      "score": 2.3,
+      "factors": [
+        {
+          "name": "dependencyCount",
+          "weight": 0.5,
+          "description": "Number of dependencies the task has"
+        },
+        {
+          "name": "subtaskCount",
+          "weight": 0.7,
+          "description": "Number of subtasks the task has been broken into"
+        },
+        {
+          "name": "priority",
+          "weight": 1,
+          "description": "Priority level of the task"
+        },
+        {
+          "name": "descriptionLength",
+          "weight": 0.3,
+          "description": "Length and detail of the task description"
+        }
+      ]
+    }
+  },
+  {
+    "id": 7,
+    "title": "Implement user interface",
+    "description": "Design and develop the user interface for the application.",
+    "status": "pending",
+    "priority": "low",
+    "dependencies": [],
+    "subtasks": [],
+    "details": "Ensure responsiveness and accessibility.",
+    "complexity": {
+      "level": "simple",
+      "score": 1.3,
+      "factors": [
+        {
+          "name": "dependencyCount",
+          "weight": 0.5,
+          "description": "Number of dependencies the task has"
+        },
+        {
+          "name": "subtaskCount",
+          "weight": 0.7,
+          "description": "Number of subtasks the task has been broken into"
+        },
+        {
+          "name": "priority",
+          "weight": 1,
+          "description": "Priority level of the task"
+        },
+        {
+          "name": "descriptionLength",
+          "weight": 0.3,
+          "description": "Length and detail of the task description"
+        }
+      ]
+    }
+  }
+]

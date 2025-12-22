@@ -1,0 +1,36 @@
+{
+  "id": 4,
+  "title": "Set up database schema",
+  "description": "Define and implement the database schema based on the system requirements.",
+  "status": "pending",
+  "priority": "high",
+  "dependencies": [],
+  "subtasks": [],
+  "details": "Ensure normalization and support for future scalability.",
+  "complexity": {
+    "level": "simple",
+    "score": 3.3,
+    "factors": [
+      {
+        "name": "dependencyCount",
+        "weight": 0.5,
+        "description": "Number of dependencies the task has"
+      },
+      {
+        "name": "subtaskCount",
+        "weight": 0.7,
+        "description": "Number of subtasks the task has been broken into"
+      },
+      {
+        "name": "priority",
+        "weight": 1,
+        "description": "Priority level of the task"
+      },
+      {
+        "name": "descriptionLength",
+        "weight": 0.3,
+        "description": "Length and detail of the task description"
+      }
+    ]
+  }
+}

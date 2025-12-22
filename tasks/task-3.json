@@ -1,0 +1,36 @@
+{
+  "id": 3,
+  "title": "Design system architecture",
+  "description": "Create a detailed system architecture diagram outlining components, data flow, and interactions.",
+  "status": "pending",
+  "priority": "high",
+  "dependencies": [],
+  "subtasks": [],
+  "details": "Focus on scalability and modularity.",
+  "complexity": {
+    "level": "simple",
+    "score": 3.3,
+    "factors": [
+      {
+        "name": "dependencyCount",
+        "weight": 0.5,
+        "description": "Number of dependencies the task has"
+      },
+      {
+        "name": "subtaskCount",
+        "weight": 0.7,
+        "description": "Number of subtasks the task has been broken into"
+      },
+      {
+        "name": "priority",
+        "weight": 1,
+        "description": "Priority level of the task"
+      },
+      {
+        "name": "descriptionLength",
+        "weight": 0.3,
+        "description": "Length and detail of the task description"
+      }
+    ]
+  }
+}

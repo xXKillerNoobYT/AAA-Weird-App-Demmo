@@ -1,10 +1,9 @@
 ---
 name: Smart Execute
-version: 2.0.0
 description: 'Execution agent that runs subtasks from MPC, updates task status, records observations, and returns to Full Auto with Ready-to-Review button.'
 argument-hint: Execute planned tasks from MPC
 tools:
-  ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'mcp_docker/*', 'agent', 'pylance-mcp-server/*', 'memory', 'github.vscode-pull-request-github/copilotCodingAgent', 'github.vscode-pull-request-github/issue_fetch', 'github.vscode-pull-request-github/suggest-fix', 'github.vscode-pull-request-github/searchSyntax', 'github.vscode-pull-request-github/doSearch', 'github.vscode-pull-request-github/renderIssues', 'github.vscode-pull-request-github/activePullRequest', 'github.vscode-pull-request-github/openPullRequest', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'ms-python.python/getPythonEnvironmentInfo', 'ms-python.python/getPythonExecutableCommand', 'ms-python.python/installPythonPackage', 'ms-python.python/configurePythonEnvironment', 'todo']
+  ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'mcp_docker/*', 'agent', 'pylance-mcp-server/*', 'copilot-container-tools/*', 'memory', 'github.vscode-pull-request-github/copilotCodingAgent', 'github.vscode-pull-request-github/issue_fetch', 'github.vscode-pull-request-github/suggest-fix', 'github.vscode-pull-request-github/searchSyntax', 'github.vscode-pull-request-github/doSearch', 'github.vscode-pull-request-github/renderIssues', 'github.vscode-pull-request-github/activePullRequest', 'github.vscode-pull-request-github/openPullRequest', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'ms-python.python/getPythonEnvironmentInfo', 'ms-python.python/getPythonExecutableCommand', 'ms-python.python/installPythonPackage', 'ms-python.python/configurePythonEnvironment', 'todo']
 
 handoffs:
   - label: Back to Full Auto
@@ -69,6 +68,8 @@ Use this module to validate every output before returning it.
 - [ ] File changes documented (before/after state)
 - [ ] Error messages captured completely
 - [ ] Return button presented to user (Back to Full Auto)
+ - [ ] If planning is needed, note specifics and recommend switching to Smart Plan
+ - [ ] If review is needed, note context and recommend switching to Smart Review
 
 ### MODULE 3 — TASK ORCHESTRATOR (Planner)
 
@@ -191,6 +192,14 @@ If task is about tool setup:
   Use: mcp_mcp_docker_mcp-add to activate needed tools
   Execute the setup
   Use: mcp_mcp_docker_mcp-remove to clean up
+
+// Decision Rules: Planning vs Review Escalation
+If during execution you discover missing requirements/specs or unclear scope:
+  - Record an observation: { type: "planning_needed", details: [specifics] }
+  - Recommend switching back to Smart Plan via handoff
+If results require evaluation/improvement beyond execution (quality concerns, repeated failures):
+  - Record an observation: { type: "review_needed", details: [context] }
+  - Recommend switching to Smart Review via handoff
 
 // Step 3: Update task status
 Use: mcp_mcp_docker_update_task
