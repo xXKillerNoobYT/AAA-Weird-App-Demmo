@@ -10,6 +10,7 @@ using CloudWatcher.Middleware;
 using CloudWatcher.Auth;
 using CloudWatcher.Services;
 using CloudWatcher.WebSockets;
+using CloudWatcher.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -136,7 +137,9 @@ builder.Services.AddSwaggerGen(options =>
 // ============================================================================
 
 builder.Services.AddHealthChecks()
-    .AddDbContextCheck<CloudWatcherContext>("database", tags: new[] { "db", "ready" });
+    .AddDbContextCheck<CloudWatcherContext>("database", tags: new[] { "db", "ready" })
+    .AddCheck<AuthenticationHealthCheck>("authentication", tags: new[] { "auth", "ready" })
+    .AddCheck<CloudStorageHealthCheck>("cloud-storage", tags: new[] { "storage", "ready" });
 
 // ============================================================================
 // LOGGING CONFIGURATION
@@ -148,6 +151,15 @@ builder.Services.AddLogging(options =>
     options.AddConsole();
     options.AddDebug();
 });
+
+// ============================================================================
+// HTTP CLIENT CONFIGURATION
+// ============================================================================
+
+// Register HttpClient for health checks and service communication
+builder.Services.AddHttpClient<CloudWatcher.Controllers.HealthController>();
+builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("health-auth");
 
 // ============================================================================
 // BUILD APPLICATION

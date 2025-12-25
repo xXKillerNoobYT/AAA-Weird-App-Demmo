@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using CloudWatcher.Data;
 using System;
 using System.Threading.Tasks;
 using System.Reflection;
+using System.Net.Http;
 
 namespace CloudWatcher.Controllers
 {
@@ -20,11 +22,19 @@ namespace CloudWatcher.Controllers
     {
         private readonly CloudWatcherContext _dbContext;
         private readonly ILogger<HealthController> _logger;
+        private readonly IConfiguration _configuration;
+        private readonly HttpClient _httpClient;
 
-        public HealthController(CloudWatcherContext dbContext, ILogger<HealthController> logger)
+        public HealthController(
+            CloudWatcherContext dbContext, 
+            ILogger<HealthController> logger,
+            IConfiguration configuration,
+            HttpClient httpClient)
         {
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         }
 
         /// <summary>
@@ -68,6 +78,60 @@ namespace CloudWatcher.Controllers
                 response.Database = "error";
                 response.ErrorMessage = ex.Message;
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, response);
+            }
+
+            // Check authentication service availability
+            try
+            {
+                var authority = _configuration["Authentication:Authority"];
+                if (string.IsNullOrEmpty(authority))
+                {
+                    _logger.LogWarning("Health check: Authentication Authority not configured");
+                    response.Authentication = "not-configured";
+                }
+                else
+                {
+                    // Read timeout from configuration, default to 5 seconds
+                    var timeoutSeconds = _configuration.GetValue<int>("HealthCheck:AuthServiceTimeoutSeconds", 5);
+                    using (var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)))
+                    {
+                        try
+                        {
+                            // Try to ping the OAuth2 metadata endpoint first (more reliable)
+                            var metadataUrl = $"{authority.TrimEnd('/')}/.well-known/openid-configuration";
+                            _logger.LogDebug($"Health check: Pinging auth metadata endpoint: {metadataUrl}");
+                            
+                            var authResponse = await _httpClient.GetAsync(metadataUrl, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cts.Token);
+                            
+                            if (authResponse.IsSuccessStatusCode)
+                            {
+                                response.Authentication = "available";
+                                _logger.LogInformation("Health check: Authentication service available (metadata endpoint accessible)");
+                            }
+                            else if (authResponse.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                            {
+                                // Unauthorized is acceptable for metadata endpoint
+                                response.Authentication = "available";
+                                _logger.LogInformation("Health check: Authentication service available (401 response acceptable)");
+                            }
+                            else
+                            {
+                                response.Authentication = "unavailable";
+                                _logger.LogWarning($"Health check: Authentication service unavailable (status: {authResponse.StatusCode})");
+                            }
+                        }
+                        catch (System.Threading.Tasks.TaskCanceledException)
+                        {
+                            _logger.LogWarning($"Health check: Authentication service ping timeout ({timeoutSeconds}s)");
+                            response.Authentication = "timeout";
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Health check: Failed to check authentication service");
+                response.Authentication = "error";
             }
 
             // Check uptime (simple counter)
@@ -224,6 +288,11 @@ namespace CloudWatcher.Controllers
         /// Database connectivity status: connected, disconnected, error
         /// </summary>
         public string Database { get; set; } = "unknown";
+
+        /// <summary>
+        /// Authentication service status: available, unavailable, error, not-configured, timeout
+        /// </summary>
+        public string Authentication { get; set; } = "unknown";
 
         /// <summary>
         /// Response timestamp in UTC

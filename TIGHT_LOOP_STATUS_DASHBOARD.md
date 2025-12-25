@@ -8,7 +8,7 @@
 
 ### Current Session Status
 
-```
+```text
 ╔════════════════════════════════════════════════════════════════════╗
 ║                    TIGHT LOOP SESSION STATUS                      ║
 ╚════════════════════════════════════════════════════════════════════╝
@@ -89,7 +89,7 @@ Iteration 3 (QUEUED)
 
 ### Session Overview
 
-```
+```text
 Session Start
      │
      ├─ 00:00-00:30 ITERATION 1 (Plan Phase)
@@ -152,7 +152,7 @@ Session Start
 
 ### Performance Metrics
 
-```
+```text
 TIMING ANALYSIS
 
 Average Phase Duration:
@@ -177,7 +177,7 @@ Task Completion Efficiency:
 
 ### Quality Metrics
 
-```
+```text
 DUPLICATE PREVENTION EFFECTIVENESS
 
 Iteration 1:
@@ -211,7 +211,7 @@ Error Handling:
 
 ### User Interaction
 
-```
+```text
 CONFIRMATION PATTERNS
 
 Decision Points per Iteration:
@@ -241,7 +241,7 @@ User Response Time:
 
 When running the tight loop, your dashboard might look like:
 
-```
+```text
 ═══════════════════════════════════════════════════════════════════
                    TIGHT LOOP WORKFLOW DASHBOARD
                     Session ID: 2024-12-15-14:32
@@ -316,6 +316,7 @@ Status: AWAITING USER RESPONSE (max 5 minutes idle timeout)
 
 ───────────────────────────────────────────────────────────────────
 
+```text
 ⏱️ ESTIMATED REMAINING TIME
 ├─ Current task: ~8 seconds
 ├─ Remaining execute subtasks: ~25 seconds
@@ -332,7 +333,7 @@ Status: AWAITING USER RESPONSE (max 5 minutes idle timeout)
 
 ### What Gets Tracked
 
-```
+```text
 Per Iteration:
 ├─ Task ID planned
 ├─ Subtask count
@@ -362,9 +363,50 @@ Per Session:
 ### Storage
 
 Dashboard data gets logged to:
+
 - **Memory:** `/memories/dev/smart-execute/` (per-iteration tracking)
 - **Zen Tasks:** Observations field (task-level details)
 - **Session Summary:** Full results when loop ends
+
+---
+
+## Agent Loop Dashboard Integration
+
+### Smart Execute Phase - Updates
+
+Agents should **READ** the current dashboard state, then **APPEND** updates:
+
+```markdown
+[Execution Update - HH:MM:SS]
+**Current Task:** [Title] (Status: in-progress)
+**Completed:** [Task A], [Task B], [Task C]
+**Failed:** [Task X] (Error: brief reason)
+**Metrics:** [X tasks/min], [timing]
+**Notes:** [Short observation from this task]
+```
+
+### Smart Review Phase - Updates
+
+Agents should **READ** execution updates, then **APPEND** review results:
+
+```markdown
+[Review Update - HH:MM:SS]
+**Completed Count:** [N] tasks verified
+**Failed Count:** [M] tasks analyzed
+**Discovered Tasks:** [K] new tasks created
+**Key Findings:** [Brief pattern summary]
+**Recommendation:** [Replan | Continue | Done]
+**Next Step:** [What happens next]
+```
+
+### Dashboard Format Rules
+
+- Each phase appends its section (don't overwrite)
+- Keep recent task list (last 5-10 items visible)
+- Observations should be short (1-2 sentences max)
+- Timestamp every update (HH:MM:SS format)
+- Current task always at top of Execute section
+- READ current state before updating (understand context)
 
 ---
 
@@ -373,6 +415,7 @@ Dashboard data gets logged to:
 During testing, watch for these indicators:
 
 ### ✅ Healthy Indicators
+
 - [ ] Each phase starts with fresh context load
 - [ ] Smart Plan finds different task each iteration (via getNextTask)
 - [ ] Smart Execute asks per-task confirmation
@@ -383,6 +426,7 @@ During testing, watch for these indicators:
 - [ ] Session summary shows all metrics
 
 ### 🚨 Warning Indicators
+
 - [ ] Same task planned twice (getNextTask not working)
 - [ ] No per-task confirmations in Execute
 - [ ] No duplicate count shown in Review
@@ -393,6 +437,7 @@ During testing, watch for these indicators:
 - [ ] Missing data in final summary
 
 ### 🔴 Critical Issues
+
 - [ ] askuser cycles overlap between agents
 - [ ] Agent state inherited from previous phase
 - [ ] Duplicate tasks created (prevention failed)
@@ -457,18 +502,21 @@ After testing, fill out this analysis:
 ## Using This Dashboard
 
 ### During Testing
+
 1. Keep this file open while running the tight loop
 2. Manually update metrics as phases complete
 3. Note any deviations from expected behavior
 4. Record user interaction patterns
 
 ### After Testing
+
 1. Fill out Analysis Template above
 2. Identify patterns and bottlenecks
 3. Create GitHub issues for improvements
 4. Update documentation based on learnings
 
 ### For Multiple Sessions
+
 1. Create a new dashboard per session
 2. Compare metrics across sessions
 3. Identify consistency and regressions
@@ -479,6 +527,7 @@ After testing, fill out this analysis:
 ## Quick Reference
 
 **Dashboard Components:**
+
 - Session metadata (ID, time, iteration count)
 - Current phase status (step, time spent, awaiting)
 - Aggregated metrics (tasks, time, quality)
@@ -488,6 +537,7 @@ After testing, fill out this analysis:
 - Live warnings for issues
 
 **Key Metrics to Track:**
+
 - Phase timing (are they consistent?)
 - Completion rates (are tasks getting done?)
 - Duplicate prevention (is it working?)
@@ -497,8 +547,73 @@ After testing, fill out this analysis:
 - Overall quality (are improvements being discovered?)
 
 **Success Criteria:**
+
 - All phases complete without manual switching
 - Duplicate prevention shows positive counts (issues prevented)
 - User confirmations happen naturally
 - Loop continues as expected
 - Session summary is complete and accurate
+
+---
+
+## Observations
+
+### Agent Role Focus (CRITICAL)
+
+Each agent focuses ONLY on its assigned job—no cross-role responsibilities:
+
+- **Smart Plan:** Creates subtasks in Zen Tasks (plans, doesn't execute or review)
+- **Smart Execute:** Executes tasks handed to it (reads task names/docs, applies properly, doesn't mark done)
+- **Smart Review:** Reviews execution results, creates discovered tasks, **marks completed tasks as done** (doesn't execute)
+
+### Task Completion Flow (CRITICAL)
+
+Tasks must NEVER be marked complete until Smart Review reviews and confirms:
+
+1. Smart Execute runs tasks but does NOT mark them complete
+2. Smart Review analyzes results, confirms work quality, then marks tasks as done
+3. This ensures accountability and prevents premature completion claims
+
+### Use Ask User for (Developer Interaction)
+
+- **Critical non-trivial decisions** - Architecture choices, scope changes, requirement conflicts
+- **Program verification** - "Has the program been started?" / "Is the GUI accessible?"
+- **Automated verification not possible** - Manual testing requirements, non-deterministic features
+- **GUI/UX feedback** - "Review this page element by element, button by button—what's missing?"
+- **Post-execution validation** - "Does this functionality work as expected through the UI?"
+- **Clarifications when** - Info not in plan/tasks/project documentation
+
+**Example Ask User Scenarios:**
+
+- Execute phase: "Program started—can you verify the login flow through the GUI?"
+- Review phase: "Page-by-page review needed: [URL or feature]. Anything missing or need changes?"
+- Plan phase: "Requirement ambiguous—what does 'responsive design' mean in your context?"
+
+### Proceed WITHOUT extra prompts when
+
+- Executing clearly scoped subtasks already approved in plan
+- Continuing deterministic actions within an in-progress phase
+- Loading context, fetching tasks, running analysis
+- Updating loop status dashboard or logging observations
+- Performing automated duplicate prevention, validation, pattern analysis
+- Creating discovered tasks from review observations (automatic, no prompting)
+
+
+### Dashboard updates (execution + review)
+
+- Smart Execute updates live loop dashboard metrics while executing (status, counts, confirmations)
+- Smart Review updates dashboard with discoveries, failures, duplicate-prevention counts, and completion summaries
+- Keep dashboard in sync each phase; no waiting for hub handoff
+
+**note:** Goal = **Chaos coding with minimum developer interference, maximum autopilot**. Ask User only for: non-trivial decisions, GUI verification, feedback that requires human judgment. Everything else runs automatically.
+
+- **Monitor for:**
+  - Repeated tasks being planned (getNextTask issue or cycle detection failure)
+  - Smart Execute marking tasks complete (should NOT do this—only Smart Review)
+  - No duplicate prevention in Review phase (discovered tasks creating duplicates)
+  - Manual agent switching (should route via Full Auto buttons)
+  - Missing or delayed user responses to critical asks (clarifications, GUI verification)
+  - Loop not continuing or breaking as expected
+  - Session hanging during phase transitions
+  - Incomplete data in final summary
+  - Each agent has full access to previous agent's chat history for context

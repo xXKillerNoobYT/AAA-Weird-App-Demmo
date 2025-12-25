@@ -71,19 +71,71 @@ namespace CloudWatcher.Controllers
                     .Distinct()
                     .ToList();
 
+                var locationNameById = new Dictionary<Guid, string>();
                 if (locationIds.Any())
                 {
-                    var existingLocations = await _dbContext.Locations
+                    locationNameById = await _dbContext.Locations
                         .Where(l => locationIds.Contains(l.Id))
-                        .Select(l => l.Id)
-                        .ToListAsync();
+                        .ToDictionaryAsync(l => l.Id, l => l.Name);
 
+                    var existingLocations = locationNameById.Keys.ToList();
                     var missingLocations = locationIds.Except(existingLocations).ToList();
                     if (missingLocations.Any())
                     {
                         return ErrorResponse($"Locations not found: {string.Join(", ", missingLocations)}", "NOT_FOUND", 404).Result!;
                     }
                 }
+
+                // Check inventory availability for each item (W5.1.3)
+                var availabilityWarnings = new List<string>();
+                var parts = await _dbContext.Parts
+                    .Where(p => partIds.Contains(p.Id))
+                    .ToListAsync();
+
+                var inventoryRecords = await _dbContext.Inventory
+                    .Where(inv => partIds.Contains(inv.PartId))
+                    .ToListAsync();
+
+                foreach (var itemRequest in request.Items)
+                {
+                    var part = parts.FirstOrDefault(p => p.Id == itemRequest.PartId);
+                    if (part == null)
+                    {
+                        continue;
+                    }
+
+                    var matchingInventory = inventoryRecords
+                        .Where(inv => inv.PartId == itemRequest.PartId && (!itemRequest.LocationId.HasValue || inv.LocationId == itemRequest.LocationId.Value))
+                        .ToList();
+
+                    var availableQuantity = matchingInventory.Sum(inv => inv.QuantityOnHand);
+
+                    if (availableQuantity < itemRequest.Quantity)
+                    {
+                        var locationLabel = string.Empty;
+                        if (itemRequest.LocationId.HasValue)
+                        {
+                            if (!locationNameById.TryGetValue(itemRequest.LocationId.Value, out var locName))
+                            {
+                                locName = itemRequest.LocationId.Value.ToString();
+                            }
+
+                            locationLabel = $" at location '{locName}'";
+                        }
+                        else
+                        {
+                            locationLabel = " across all locations";
+                        }
+
+                        availabilityWarnings.Add(
+                            $"Part '{part.Name}'{locationLabel} has {availableQuantity} units available but {itemRequest.Quantity} requested. " +
+                            $"This quantity may be reserved for pending approvals."
+                        );
+                    }
+                }
+
+                // Note: Warnings are informational - order is still created
+                // Full availability validation is done at approval stage when inventory is reserved
 
                 // Create order entity
                 var order = new Order
@@ -142,7 +194,7 @@ namespace CloudWatcher.Controllers
                         .ThenInclude(oi => oi.Location)
                     .FirstOrDefaultAsync(o => o.Id == order.Id);
 
-                return Created($"/api/v2/orders/{order.Id}", MapToOrderResponse(createdOrder!));
+                return Created($"/api/v2/orders/{order.Id}", MapToOrderResponse(createdOrder!, availabilityWarnings));
             }
             catch (Exception ex)
             {
@@ -463,7 +515,7 @@ namespace CloudWatcher.Controllers
         // Helper Methods
         // =========================
 
-        private OrderResponse MapToOrderResponse(Order order)
+        private OrderResponse MapToOrderResponse(Order order, List<string>? availabilityWarnings = null)
         {
             return new OrderResponse
             {
@@ -474,6 +526,7 @@ namespace CloudWatcher.Controllers
                 CreatedAt = order.CreatedAt,
                 ShippedAt = order.ShippedAt,
                 DeliveredAt = order.DeliveredAt,
+                AvailabilityWarnings = availabilityWarnings ?? new List<string>(),
                 Items = order.Items.Select(oi => new OrderItemResponse
                 {
                     Id = oi.Id,
@@ -530,6 +583,7 @@ namespace CloudWatcher.Controllers
         public DateTime CreatedAt { get; set; }
         public DateTime? ShippedAt { get; set; }
         public DateTime? DeliveredAt { get; set; }
+        public List<string> AvailabilityWarnings { get; set; } = new();
         public List<OrderItemResponse> Items { get; set; } = new();
     }
 
