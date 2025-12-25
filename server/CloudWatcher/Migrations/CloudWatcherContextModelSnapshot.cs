@@ -17,7 +17,7 @@ namespace CloudWatcher.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("ProductVersion", "10.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -203,9 +203,6 @@ namespace CloudWatcher.Migrations
                     b.Property<Guid>("LocationId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("LocationId1")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("PartId")
                         .HasColumnType("uuid");
 
@@ -224,8 +221,6 @@ namespace CloudWatcher.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("LocationId");
-
-                    b.HasIndex("LocationId1");
 
                     b.HasIndex("PartId");
 
@@ -276,6 +271,10 @@ namespace CloudWatcher.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PartId", "ChangedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_InventoryAuditLogs_PartId_ChangedAt");
 
                     b.ToTable("InventoryAuditLogs");
                 });
@@ -417,6 +416,9 @@ namespace CloudWatcher.Migrations
                     b.Property<decimal>("LineAmount")
                         .HasColumnType("numeric");
 
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
 
@@ -431,9 +433,11 @@ namespace CloudWatcher.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("LocationId");
+
                     b.HasIndex("OrderId");
 
-                    b.HasIndex("PartId");
+                    b.HasIndex("PartId", "LocationId");
 
                     b.ToTable("OrderItems");
                 });
@@ -558,6 +562,78 @@ namespace CloudWatcher.Migrations
                     b.HasIndex("VariantCode");
 
                     b.ToTable("PartVariants");
+                });
+
+            modelBuilder.Entity("CloudWatcher.Models.PurchaseOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ExpectedDeliveryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsFullyReceived")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("OrderDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ReceivedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsFullyReceived");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("PurchaseOrders");
+                });
+
+            modelBuilder.Entity("CloudWatcher.Models.PurchaseOrderItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("LineAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("PartId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PurchaseOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("QuantityOrdered")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("QuantityReceived")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PurchaseOrderId");
+
+                    b.HasIndex("PartId", "PurchaseOrderId");
+
+                    b.ToTable("PurchaseOrderItems");
                 });
 
             modelBuilder.Entity("CloudWatcher.Models.Request", b =>
@@ -880,23 +956,19 @@ namespace CloudWatcher.Migrations
 
             modelBuilder.Entity("CloudWatcher.Models.Inventory", b =>
                 {
-                    b.HasOne("CloudWatcher.Models.Location", null)
-                        .WithMany()
+                    b.HasOne("CloudWatcher.Models.Location", "Location")
+                        .WithMany("InventoryRecords")
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CloudWatcher.Models.Location", "Location")
-                        .WithMany("InventoryRecords")
-                        .HasForeignKey("LocationId1");
-
-                    b.HasOne("CloudWatcher.Models.Part", null)
+                    b.HasOne("CloudWatcher.Models.Part", "Part")
                         .WithMany()
                         .HasForeignKey("PartId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CloudWatcher.Models.Part", "Part")
+                    b.HasOne("CloudWatcher.Models.Part", null)
                         .WithMany("InventoryRecords")
                         .HasForeignKey("PartId1");
 
@@ -914,9 +986,11 @@ namespace CloudWatcher.Migrations
 
             modelBuilder.Entity("CloudWatcher.Models.Order", b =>
                 {
-                    b.HasOne("CloudWatcher.Models.Request", null)
+                    b.HasOne("CloudWatcher.Models.Request", "Request")
                         .WithMany()
                         .HasForeignKey("RequestId");
+
+                    b.Navigation("Request");
                 });
 
             modelBuilder.Entity("CloudWatcher.Models.OrderApproval", b =>
@@ -949,17 +1023,27 @@ namespace CloudWatcher.Migrations
 
             modelBuilder.Entity("CloudWatcher.Models.OrderItem", b =>
                 {
-                    b.HasOne("CloudWatcher.Models.Order", null)
+                    b.HasOne("CloudWatcher.Models.Location", "Location")
                         .WithMany()
+                        .HasForeignKey("LocationId");
+
+                    b.HasOne("CloudWatcher.Models.Order", "Order")
+                        .WithMany("Items")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CloudWatcher.Models.Part", null)
+                    b.HasOne("CloudWatcher.Models.Part", "Part")
                         .WithMany()
                         .HasForeignKey("PartId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Location");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Part");
                 });
 
             modelBuilder.Entity("CloudWatcher.Models.PartConsumable", b =>
@@ -1003,6 +1087,36 @@ namespace CloudWatcher.Migrations
                     b.HasOne("CloudWatcher.Models.Part", null)
                         .WithMany("Variants")
                         .HasForeignKey("PartId1");
+                });
+
+            modelBuilder.Entity("CloudWatcher.Models.PurchaseOrder", b =>
+                {
+                    b.HasOne("CloudWatcher.Models.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("CloudWatcher.Models.PurchaseOrderItem", b =>
+                {
+                    b.HasOne("CloudWatcher.Models.Part", "Part")
+                        .WithMany()
+                        .HasForeignKey("PartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CloudWatcher.Models.PurchaseOrder", "PurchaseOrder")
+                        .WithMany("Items")
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Part");
+
+                    b.Navigation("PurchaseOrder");
                 });
 
             modelBuilder.Entity("CloudWatcher.Models.RequestMetadata", b =>
@@ -1091,11 +1205,21 @@ namespace CloudWatcher.Migrations
                     b.Navigation("InventoryRecords");
                 });
 
+            modelBuilder.Entity("CloudWatcher.Models.Order", b =>
+                {
+                    b.Navigation("Items");
+                });
+
             modelBuilder.Entity("CloudWatcher.Models.Part", b =>
                 {
                     b.Navigation("InventoryRecords");
 
                     b.Navigation("Variants");
+                });
+
+            modelBuilder.Entity("CloudWatcher.Models.PurchaseOrder", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

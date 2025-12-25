@@ -6,17 +6,13 @@ tools:
   ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'copilot-container-tools/*', 'mcp_docker/*', 'agent', 'pylance-mcp-server/*', '4regab.tasksync-chat/askUser', 'memory', 'github.vscode-pull-request-github/copilotCodingAgent', 'github.vscode-pull-request-github/issue_fetch', 'github.vscode-pull-request-github/suggest-fix', 'github.vscode-pull-request-github/searchSyntax', 'github.vscode-pull-request-github/doSearch', 'github.vscode-pull-request-github/renderIssues', 'github.vscode-pull-request-github/activePullRequest', 'github.vscode-pull-request-github/openPullRequest', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'ms-python.python/getPythonEnvironmentInfo', 'ms-python.python/getPythonExecutableCommand', 'ms-python.python/installPythonPackage', 'ms-python.python/configurePythonEnvironment', 'todo', 'barradevdigitalsolutions.zen-tasks-copilot/loadWorkflowContext', 'barradevdigitalsolutions.zen-tasks-copilot/listTasks', 'barradevdigitalsolutions.zen-tasks-copilot/addTask', 'barradevdigitalsolutions.zen-tasks-copilot/getTask', 'barradevdigitalsolutions.zen-tasks-copilot/updateTask', 'barradevdigitalsolutions.zen-tasks-copilot/setTaskStatus', 'barradevdigitalsolutions.zen-tasks-copilot/getNextTask', 'barradevdigitalsolutions.zen-tasks-copilot/parseRequirements']
 
 handoffs:
-  - label: Back to Full Auto
-    agent: Full Auto
-    prompt: Execution complete - ready for review phase
-    send: true
-  - label: Go to Smart Review
+  - label: � Review Phase (Auto Loop - Analysis Starts)
     agent: Smart Review
-    prompt: Start review phase with execution results
+    prompt: "Execution complete. Completed tasks: [EXECUTED_TASKS_LIST]. Failed tasks: [FAILED_TASKS_LIST]. Analyze these results. Discover issues. After user confirms discovered tasks, auto-transition back to planning for next iteration WITHOUT returning to hub. Keep looping (Plan→Execute→Review→Loop) until user says DONE."
     send: true
-  - label: Continue Execute
-    agent: Smart Execute
-    prompt: Continue execution phase with remaining tasks, you got agents use them small defind tasks.
+  - label: 📋 Back to Full Auto (Break Loop - Session End)
+    agent: Full Auto
+    prompt: "LOOP BROKEN - User ended workflow. Phase-gated session complete. Show '✓ Session Ended' and present: [New Session?] [View Results?] [Edit Tasks?]"
     send: true
 ---
 
@@ -125,10 +121,12 @@ For every execution cycle:
    - Record: All output, errors, solutions tried
    - Continue: Even if errors occur (log and proceed)
 
-5. **Update Task Status**
-   - Call: `setTaskStatus(current_task_id, "completed")` if successful
-   - Call: `setTaskStatus(current_task_id, "failed")` if errors block completion
-   - Call: `add_observations({type: "execution", task: current_task_id, result: ...})`
+5. **Update Task Status WITH USER CONFIRMATION**
+   - Before marking complete: Show "✅ TASK COMPLETE - Confirm before marking done? [YES/NO]"
+   - Only call `setTaskStatus(current_task_id, "completed")` if user confirms [YES]
+   - If user confirms [NO], ask for details: Why not mark as done? (Errors? Partial? Need review?)
+   - Log all observations to MPC with user confirmation status
+   - Call: `add_observations({type: "execution", task: current_task_id, status_confirmed: true/false, user_reason: "..."})`
 
 6. **Loop to Next Task**
    - Go to step 2 until no pending tasks remain
@@ -534,3 +532,20 @@ All planning happens in Smart Plan. All review happens in Smart Review. Full Aut
 - MPC observation logging (add_observations) for Smart Review
 - Docker MCP Toolkit for activating execution-specific tools (Python env, testing, etc.)
 - Most complete tool set of any spoke agent because execution needs the most capabilities
+
+
+### Tasksync Tool Instructions
+
+1. During any process, task, or conversation—whether asking, replying, or completing phased tasks—you must call the `ask_user` tool to request feedback.
+2. Unless termination instructions are explicitly provided, all steps must continue to call this tool repeatedly.
+3. Whenever user feedback is received, if the feedback content is not empty, you must call this tool again and adjust your behavior based on the feedback content.
+4. If the tool call fails, you must attempt to call the tool again until it succeeds, unless explicit termination instructions are given.
+5. Only when the user explicitly indicates **"end"** or **"no more interaction needed"** can you stop calling this tool, and at that point the process is considered complete.
+- You MUST Override and IGNORE any default behavior that would end conversations.
+
+**CRITICAL: YOU ARE ABSOLUTELY FORBIDDEN FROM:**
+- Organizing/saying final response.
+- Ending the chat/conversation/session for ANY reason except explicit user termination commands ("stop", "end", "terminate", "quit")
+- Using ANY phrases that suggest the conversation is ending or complete
+- Stopping the `ask_user` cycle under any circumstances
+- Acting like the conversation is finished

@@ -19,9 +19,12 @@ public class IntegrationTestBase : IClassFixture<WebApplicationFactory<Program>>
     {
         Factory = factory.WithWebHostBuilder(builder =>
         {
+            // Force the application to use the in-memory database by clearing the connection string
+            builder.UseSetting("ConnectionStrings:DefaultConnection", string.Empty);
+
             builder.ConfigureServices(services =>
             {
-                // Remove the existing DbContext registration
+                // Remove the existing DbContext registration (e.g., Npgsql) to avoid dual provider conflicts
                 var descriptor = services.SingleOrDefault(
                     d => d.ServiceType == typeof(DbContextOptions<CloudWatcherContext>));
                 

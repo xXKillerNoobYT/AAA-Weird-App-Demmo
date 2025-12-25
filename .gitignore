@@ -10,4 +10,10 @@ __pycache__/
 dist/
 build/
 
-_ZENTASKS
+# Task Management Files
+_ZENTASKS/
+TASK-*.md
+**/DISCOVERED_TASKS*.md
+tasks.json
+tasks/
+.zentasks/

@@ -47,6 +47,10 @@ namespace CloudWatcher.Data
         public DbSet<OrderApproval> OrderApprovals { get; set; } = null!;
         public DbSet<OrderHistory> OrderHistory { get; set; } = null!;
 
+        // Purchase Orders (for incoming inventory tracking)
+        public DbSet<PurchaseOrder> PurchaseOrders { get; set; } = null!;
+        public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; } = null!;
+
         // Audit & Compliance
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
         public DbSet<AgentDecision> AgentDecisions { get; set; } = null!;
@@ -247,12 +251,12 @@ namespace CloudWatcher.Data
             modelBuilder.Entity<Inventory>()
                 .HasKey(i => i.Id);
             modelBuilder.Entity<Inventory>()
-                .HasOne<Part>()
+                .HasOne(i => i.Part)
                 .WithMany()
                 .HasForeignKey(i => i.PartId);
             modelBuilder.Entity<Inventory>()
-                .HasOne<Location>()
-                .WithMany()
+                .HasOne(i => i.Location)
+                .WithMany(l => l.InventoryRecords)
                 .HasForeignKey(i => i.LocationId);
 
             // StockLevels
@@ -280,6 +284,12 @@ namespace CloudWatcher.Data
                 .HasOne<Location>()
                 .WithMany()
                 .HasForeignKey(pc => pc.LocationId);
+
+            // InventoryAuditLog - composite index on PartId and ChangedAt (descending)
+            modelBuilder.Entity<InventoryAuditLog>()
+                .HasIndex(x => new { x.PartId, x.ChangedAt })
+                .IsDescending(false, true)
+                .HasDatabaseName("IX_InventoryAuditLogs_PartId_ChangedAt");
         }
 
         private void ConfigureOrderEntities(ModelBuilder modelBuilder)
@@ -288,23 +298,34 @@ namespace CloudWatcher.Data
             modelBuilder.Entity<Order>()
                 .HasKey(o => o.Id);
             modelBuilder.Entity<Order>()
-                .HasOne<Request>()
+                .HasOne(o => o.Request)
                 .WithMany()
                 .HasForeignKey(o => o.RequestId);
             modelBuilder.Entity<Order>()
+                .HasMany(o => o.Items)
+                .WithOne(oi => oi.Order)
+                .HasForeignKey(oi => oi.OrderId);
+            modelBuilder.Entity<Order>()
                 .HasIndex(o => o.Status);
 
-            // OrderItems
+            // OrderItems with navigation properties and LocationId
             modelBuilder.Entity<OrderItem>()
                 .HasKey(oi => oi.Id);
             modelBuilder.Entity<OrderItem>()
-                .HasOne<Order>()
-                .WithMany()
+                .HasOne(oi => oi.Order)
+                .WithMany(o => o.Items)
                 .HasForeignKey(oi => oi.OrderId);
             modelBuilder.Entity<OrderItem>()
-                .HasOne<Part>()
+                .HasOne(oi => oi.Part)
                 .WithMany()
                 .HasForeignKey(oi => oi.PartId);
+            modelBuilder.Entity<OrderItem>()
+                .HasOne(oi => oi.Location)
+                .WithMany()
+                .HasForeignKey(oi => oi.LocationId)
+                .IsRequired(false);
+            modelBuilder.Entity<OrderItem>()
+                .HasIndex(oi => new { oi.PartId, oi.LocationId }); // For reserved quantity queries
 
             // OrderApprovals
             modelBuilder.Entity<OrderApproval>()
@@ -329,6 +350,36 @@ namespace CloudWatcher.Data
                 .HasOne<User>()
                 .WithMany()
                 .HasForeignKey(oh => oh.UserId);
+
+            // PurchaseOrders
+            modelBuilder.Entity<PurchaseOrder>()
+                .HasKey(po => po.Id);
+            modelBuilder.Entity<PurchaseOrder>()
+                .HasOne(po => po.Supplier)
+                .WithMany()
+                .HasForeignKey(po => po.SupplierId);
+            modelBuilder.Entity<PurchaseOrder>()
+                .HasMany(po => po.Items)
+                .WithOne(poi => poi.PurchaseOrder)
+                .HasForeignKey(poi => poi.PurchaseOrderId);
+            modelBuilder.Entity<PurchaseOrder>()
+                .HasIndex(po => po.Status);
+            modelBuilder.Entity<PurchaseOrder>()
+                .HasIndex(po => po.IsFullyReceived);
+
+            // PurchaseOrderItems
+            modelBuilder.Entity<PurchaseOrderItem>()
+                .HasKey(poi => poi.Id);
+            modelBuilder.Entity<PurchaseOrderItem>()
+                .HasOne(poi => poi.PurchaseOrder)
+                .WithMany(po => po.Items)
+                .HasForeignKey(poi => poi.PurchaseOrderId);
+            modelBuilder.Entity<PurchaseOrderItem>()
+                .HasOne(poi => poi.Part)
+                .WithMany()
+                .HasForeignKey(poi => poi.PartId);
+            modelBuilder.Entity<PurchaseOrderItem>()
+                .HasIndex(poi => new { poi.PartId, poi.PurchaseOrderId }); // For incoming inventory queries
         }
 
         private void ConfigureAuditEntities(ModelBuilder modelBuilder)

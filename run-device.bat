@@ -18,13 +18,42 @@ if %ERRORLEVEL% NEQ 0 (
 
 REM Check if device project exists
 if not exist "devices\DeviceClient\DeviceClient.csproj" (
-    echo WARNING: Device project not found at devices\DeviceClient\
+    echo WARNING: .NET device project not found at devices\DeviceClient\
+    echo Falling back to Python device client if available...
     echo.
-    echo The .NET device application hasn't been created yet.
-    echo Please run setup.bat and wait for the project scaffolding.
+    
+    REM Try Python virtual environment
+    if not exist ".venv\Scripts\activate.bat" (
+        echo ERROR: Python virtual environment not found (.venv)
+        echo Please run setup.bat to create the environment.
+        pause
+        exit /b 1
+    )
+
+    REM Check for Python device script
+    if not exist "device\python\send_request.py" (
+        echo ERROR: Python device client script device\python\send_request.py not found
+        echo Please add the device client or scaffold the .NET app.
+        pause
+        exit /b 1
+    )
+
+    echo Activating Python environment...
+    call .venv\Scripts\activate.bat
+    if %ERRORLEVEL% NEQ 0 (
+        echo ERROR: Failed to activate Python virtual environment
+        pause
+        exit /b 1
+    )
+
     echo.
-    pause
-    exit /b 1
+    echo Starting Python device client...
+    echo Press Ctrl+C to stop
+    echo.
+    python device\python\send_request.py
+
+    set EXITCODE=%ERRORLEVEL%
+    exit /b %EXITCODE%
 )
 
 REM Build and run the device app

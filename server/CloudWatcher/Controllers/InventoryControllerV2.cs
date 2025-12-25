@@ -110,7 +110,7 @@ namespace CloudWatcher.Controllers
 
                 // Fetch parts with their inventory data
                 var parts = await paginatedQuery
-                    .Include(p => p.Code)
+                    .Include(p => p.InventoryRecords)
                     .ToListAsync();
 
                 // Project into response DTOs with inventory data
@@ -488,15 +488,77 @@ namespace CloudWatcher.Controllers
         }
 
         /// <summary>
-        /// GET /api/v2/inventory/{partId}/availability - Calculate available quantity
+        /// GET /api/v2/inventory/{partId}/availability - Calculate comprehensive part availability
         /// </summary>
-        /// <param name="partId">Part UUID identifier</param>
-        /// <param name="includeReserved">Include reserved quantities breakdown (default: false)</param>
-        /// <returns>Part availability across all locations with reserved quantities</returns>
-        /// <response code="200">Returns availability information</response>
-        /// <response code="400">Invalid part ID format</response>
-        /// <response code="404">Part not found</response>
-        /// <response code="500">Internal server error</response>
+        /// <remarks>
+        /// **Wave 4 Enhancement:** Returns detailed availability calculations including:
+        /// - Current on-hand inventory across all locations
+        /// - Reserved units from pending and approved orders
+        /// - Incoming units from approved purchase orders
+        /// - Backorder quantities when demand exceeds supply
+        /// - **Effective available units** (most important metric for planning)
+        /// 
+        /// **Calculation Formula:**
+        /// ```
+        /// effectiveAvailable = totalOnHand - reservedUnits + incomingUnits - backorderedUnits
+        /// ```
+        /// 
+        /// **Use Cases:**
+        /// - **Order Fulfillment:** Check if you can fulfill a new order immediately (use `totalAvailable`)
+        /// - **Future Planning:** Determine availability after incoming shipments (use `effectiveAvailableUnits`)
+        /// - **Backorder Detection:** Identify shortage situations (check `backorderedUnits > 0`)
+        /// - **Multi-Location Fulfillment:** Optimize shipping from locations with highest availability
+        /// 
+        /// **Example Request:**
+        /// ```
+        /// GET /api/v2/inventory/550e8400-e29b-41d4-a716-446655440000/availability
+        /// ```
+        /// 
+        /// **Example Response:**
+        /// ```json
+        /// {
+        ///   "partId": "550e8400-e29b-41d4-a716-446655440000",
+        ///   "partCode": "PART-001",
+        ///   "partName": "Test Widget Alpha",
+        ///   "totalQuantityOnHand": 100,
+        ///   "totalReserved": 35,
+        ///   "totalAvailable": 65,
+        ///   "reservedUnits": 35,
+        ///   "incomingUnits": 50,
+        ///   "backorderedUnits": 0,
+        ///   "effectiveAvailableUnits": 115,
+        ///   "locationCount": 3,
+        ///   "locations": [...]
+        /// }
+        /// ```
+        /// 
+        /// **Field Descriptions:**
+        /// - `totalQuantityOnHand`: Physical inventory currently in stock across all locations
+        /// - `totalReserved`: Sum of reserved quantities per location (units allocated to orders)
+        /// - `totalAvailable`: Units available for new orders RIGHT NOW (onHand - reserved)
+        /// - `reservedUnits`: Total units reserved from pending and approved orders
+        /// - `incomingUnits`: Units on order from suppliers (approved POs not yet received)
+        /// - `backorderedUnits`: Units that customers ordered but you don't have in stock (demand exceeds supply)
+        /// - `effectiveAvailableUnits`: Total units available AFTER incoming shipments arrive (most important for planning)
+        /// - `locations`: Per-location breakdown with reserved quantities and reorder flags
+        /// 
+        /// **Performance:** Executes 3 database queries (inventory, reserved calculation, incoming calculation)
+        /// 
+        /// **Related Endpoints:**
+        /// - POST /api/v1/orders - Create order (will reserve inventory)
+        /// - GET /api/v2/inventory/{partId}/locations - Location-only view
+        /// 
+        /// **Documentation:**
+        /// - User Guide: /docs/User-Guide-Availability.md
+        /// - Admin Guide: /docs/Admin-Guide-Backorders.md
+        /// </remarks>
+        /// <param name="partId">Part UUID identifier (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)</param>
+        /// <param name="includeReserved">Include reserved quantities breakdown (default: false). Note: Reserved data is always included in Wave 4 response.</param>
+        /// <returns>Comprehensive part availability information including effective available units</returns>
+        /// <response code="200">Returns availability information with all Wave 4 fields</response>
+        /// <response code="400">Invalid part ID format (must be valid UUID)</response>
+        /// <response code="404">Part not found in database</response>
+        /// <response code="500">Internal server error (check logs for database or calculation errors)</response>
         [HttpGet("{partId}/availability")]
         [ProducesResponseType(typeof(PartAvailabilityResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -532,9 +594,40 @@ namespace CloudWatcher.Controllers
                     .Include(i => i.Location)
                     .ToListAsync();
 
-                // TODO: Reserved quantities calculation requires Order.Status and OrderItem.LocationId
-                // For now, set reserved to 0 until Order model is enhanced
-                var reservedByLocation = new Dictionary<Guid, int>();
+                // Calculate reserved quantities from open OrderItems
+                // Reserved = sum of OrderItem quantities where Order.Status in ('pending', 'approved')
+                var reservedQuery = from oi in _dbContext.OrderItems
+                                   join o in _dbContext.Orders on oi.OrderId equals o.Id
+                                   where oi.PartId == partGuid 
+                                      && (o.Status == "pending" || o.Status == "approved")
+                                   group oi by oi.LocationId into g
+                                   select new { LocationId = g.Key, ReservedQuantity = g.Sum(x => x.Quantity) };
+
+                var reservedByLocation = await reservedQuery.ToDictionaryAsync(
+                    r => r.LocationId ?? Guid.Empty, 
+                    r => r.ReservedQuantity);
+
+                // Calculate incoming inventory from approved but not fully received POs
+                // Incoming = sum of (PurchaseOrderItem.QuantityOrdered - QuantityReceived) 
+                // where PurchaseOrder.Status = 'approved' and IsFullyReceived = false
+                var incomingQuery = from poi in _dbContext.PurchaseOrderItems
+                                   join po in _dbContext.PurchaseOrders on poi.PurchaseOrderId equals po.Id
+                                   where poi.PartId == partGuid
+                                      && po.Status == "approved"
+                                      && !po.IsFullyReceived
+                                   select new { 
+                                       PartId = poi.PartId, 
+                                       IncomingQuantity = poi.QuantityOrdered - poi.QuantityReceived 
+                                   };
+
+                var totalIncoming = await incomingQuery.SumAsync(x => x.IncomingQuantity);
+
+                // Calculate backorder impact: OrderItems that couldn't be fulfilled due to insufficient inventory
+                // Backorder = max(0, TotalReserved - TotalOnHand) for approved orders
+                // This represents orders that have been approved but can't be fulfilled from current stock
+                var totalOnHandForBackorder = inventoryRecords.Sum(i => i.QuantityOnHand);
+                var totalReservedForBackorder = reservedByLocation.Values.Sum();
+                var totalBackordered = Math.Max(0, totalReservedForBackorder - totalOnHandForBackorder);
 
                 // Calculate availability by location
                 var locationAvailability = inventoryRecords
@@ -559,6 +652,10 @@ namespace CloudWatcher.Controllers
                 var totalReserved = locationAvailability.Sum(l => l.ReservedQuantity);
                 var totalAvailable = totalOnHand - totalReserved;
 
+                // Wave 4: Calculate effective available units
+                // Formula: effectiveAvailable = totalAvailable - backorderedUnits + incomingUnits
+                var effectiveAvailable = totalAvailable - totalBackordered + totalIncoming;
+
                 var response = new PartAvailabilityResponse
                 {
                     PartId = partGuid.ToString(),
@@ -567,13 +664,20 @@ namespace CloudWatcher.Controllers
                     TotalQuantityOnHand = totalOnHand,
                     TotalReserved = totalReserved,
                     TotalAvailable = totalAvailable,
+                    
+                    // Wave 4 enrichment fields
+                    ReservedUnits = totalReservedForBackorder,
+                    IncomingUnits = totalIncoming,
+                    BackorderedUnits = totalBackordered,
+                    EffectiveAvailableUnits = effectiveAvailable,
+                    
                     LocationCount = locationAvailability.Count,
                     Locations = locationAvailability,
                     CheckedAt = DateTime.UtcNow
                 };
 
-                _logger.LogInformation("Availability calculated: partId={partId}, totalOnHand={onHand}, totalAvailable={available}",
-                    partGuid, totalOnHand, totalAvailable);
+                _logger.LogInformation("Availability calculated: partId={partId}, totalOnHand={onHand}, totalAvailable={available}, effectiveAvailable={effectiveAvailable}",
+                    partGuid, totalOnHand, totalAvailable, effectiveAvailable);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -751,6 +855,13 @@ namespace CloudWatcher.Controllers
             public int TotalQuantityOnHand { get; set; }
             public int TotalReserved { get; set; }
             public int TotalAvailable { get; set; }
+            
+            // Wave 4 enrichment fields
+            public int ReservedUnits { get; set; }
+            public int IncomingUnits { get; set; }
+            public int BackorderedUnits { get; set; }
+            public int EffectiveAvailableUnits { get; set; }
+            
             public int LocationCount { get; set; }
             public DateTime CheckedAt { get; set; }
             public List<LocationAvailabilityDto> Locations { get; set; } = new();

@@ -62,6 +62,9 @@ builder.Services.AddScoped(sp => new RequestHandler(sp.GetRequiredService<ICloud
 builder.Services.AddSingleton<WebSocketConnectionPool>();
 builder.Services.AddScoped<WebSocketMessageRouter>();
 
+// Register background services
+builder.Services.AddHostedService<InventoryAuditRetentionService>();
+
 // ============================================================================
 // CORS CONFIGURATION
 // ============================================================================
@@ -113,15 +116,11 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    options.SwaggerDoc("v1", new()
     {
         Title = "CloudWatcher API",
         Version = "v1",
-        Description = "RESTful API for managing device requests and responses",
-        Contact = new Microsoft.OpenApi.Models.OpenApiContact
-        {
-            Name = "CloudWatcher Team"
-        }
+        Description = "RESTful API for managing device requests and responses"
     });
 
     // Add XML documentation if file exists
@@ -161,6 +160,32 @@ Directory.CreateDirectory(Path.Combine(cloudRoot, "Requests"));
 Directory.CreateDirectory(Path.Combine(cloudRoot, "Responses"));
 
 // ============================================================================
+// APPLY PENDING DATABASE MIGRATIONS ON STARTUP
+// ============================================================================
+
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<CloudWatcher.Data.CloudWatcherContext>();
+        db.Database.Migrate();
+        
+        // Check for --seed-wave4 command-line argument
+        if (args.Contains("--seed-wave4"))
+        {
+            app.Logger.LogInformation("🌱 Seeding Wave 4 test data (triggered by --seed-wave4 argument)");
+            var seeder = new CloudWatcher.Seeds.Wave4TestSeeder(db);
+            await seeder.SeedAsync();
+        }
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Database migration failed at startup");
+        // Allow app to continue; health checks will surface DB readiness
+    }
+}
+
+// ============================================================================
 // MIDDLEWARE PIPELINE CONFIGURATION
 // ============================================================================
 
@@ -191,6 +216,12 @@ app.UseWebSockets(new WebSocketOptions
 {
     KeepAliveInterval = TimeSpan.FromSeconds(30)
 });
+
+// Development-only API key bypass for local testing (injects dev identity BEFORE authentication)
+if (app.Environment.IsDevelopment())
+{
+    app.UseMiddleware<LocalDevApiKeyMiddleware>();
+}
 
 // Add authentication middleware
 app.UseAuthentication();
