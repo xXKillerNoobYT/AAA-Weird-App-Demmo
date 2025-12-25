@@ -1,20 +1,66 @@
-# AutoGen Multi-Agent AI Framework
+# AAA Weird App Demo - Multi-Agent Workflow System
 
-AutoGen is a multi-language framework for creating AI agents that can act autonomously or work alongside humans. The project has separate Python and .NET implementations with their own development workflows.
+This is an integrated multi-agent AI system using GitHub Copilot agents to manage development tasks collaboratively. The workflow combines **Full Auto (Hub)** with specialized **Spoke Agents** (Plan, Execute, Review, Prep Cloud) coordinated through **Zen Tasks** for task tracking and **MPC (Memory & Project Context)** for state management.
 
-Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.
+**Core Architecture:**
+- **Full Auto New**: Central UI hub that displays task queues and routes to specialists
+- **Smart Plan**: Creates detailed subtasks and detects requirement vagueness
+- **Smart Execute**: Runs tasks sequentially with status updates and error logging
+- **Smart Review**: Analyzes execution results and provides root-cause analysis
+- **Agent Builder & Updater**: Creates/maintains agents with consistent structure
+- **Tool Builder**: Designs and implements MCP tools
+- **Smart Prep Cloud**: Prepares tasks for cloud execution
+
+**Always reference these instructions first.** All agents follow the 2-module reasoning system (CHECKLIST + TASK ORCHESTRATOR) and use Zen Tasks for task tracking.
+
+## Zen Tasks Integration
+
+**Zen Tasks is the single source of truth for all development work.** Every agent loads the workflow context, queries for next tasks, and updates status after work completes.
+
+### Task Tracking Pattern (Test Sync)
+
+All agents follow this pattern:
+```
+1. loadWorkflowContext()        # Load current project and task state
+2. getNextTask(limit=N)          # Get executable tasks in priority order
+3. [Perform work]                # Execute, plan, review, or build
+4. setTaskStatus(task_id, ...)   # Update task status and observations
+5. Return to Full Auto with button options
+```
+
+### Task Protocol Standard
+
+All tasks in Zen Tasks must include:
+- **Status:** pending | in_progress | completed | failed | deferred
+- **Priority:** low | medium | high
+- **Complexity:** 1-10 scale with label (simple 1-2, moderate 2-5, complex 5-7, veryComplex 7-10)
+- **Description:** 2-3 sentences explaining the work
+- **Tags:** Comma-separated functional area tags
+- **Recommended Subtasks:** 0-10 count for planning guidance
+
+### Memory Organization
+
+All agents use consistent memory namespaces:
+- `/memories/dev/full-auto/` - Hub coordination state
+- `/memories/dev/smart-plan/` - Planning analysis and decisions
+- `/memories/dev/smart-execute/` - Execution logs and observations
+- `/memories/dev/smart-review/` - Analysis results and insights
+- `/memories/dev/agent-builder/` - Agent templates and updates
+- `/memories/dev/tool-builder/` - Tool specs and implementations
+- `/memories/dev/smart-prep-cloud/` - Cloud confidence and artifacts
+- `/memories/dev/shared/` - Cross-agent shared state
 
 ## Working Effectively
 
 ### Prerequisites and Environment Setup
 
-**CRITICAL**: Install both .NET 8.0 and 9.0 for full compatibility:
-- Install uv package manager: `python3 -m pip install uv` 
-- Install .NET 9.0 SDK: `wget https://dot.net/v1/dotnet-install.sh && chmod +x dotnet-install.sh && ./dotnet-install.sh --channel 9.0`
-- Install .NET 8.0 runtime: `./dotnet-install.sh --channel 8.0 --runtime dotnet && ./dotnet-install.sh --channel 8.0 --runtime aspnetcore`
-- Update PATH: `export PATH="$HOME/.dotnet:$PATH"`
+**.NET Development (Required for this project):**
+- Install .NET 9.0 SDK: `./dotnet-install.ps1 -Channel 9.0`
+- Install .NET 8.0 runtime: `./dotnet-install.ps1 -Channel 8.0 --runtime dotnet`
+- Update PATH: `$env:PATH = "C:\Users\weird\AppData\Local\Microsoft\dotnet;$env:PATH"`
+- Verify: `dotnet --version` (should be 9.0.x)
 
-### Python Development Workflow
+### Python Development Workflow (Optional)
 
 **Bootstrap and build Python environment:**
 ```bash
@@ -164,63 +210,228 @@ Always manually validate changes by running complete user scenarios after making
 
 ## Repository Structure
 
-### Python Packages (`python/packages/`)
-- `autogen-core`: Core agent runtime, model interfaces, and base components
-- `autogen-agentchat`: High-level multi-agent conversation APIs  
-- `autogen-ext`: Extensions for specific model providers and tools
-- `autogen-studio`: Web-based IDE for agent workflows
-- `agbench`: Benchmarking suite for agent performance
-- `magentic-one-cli`: Multi-agent team CLI application
+### .NET Project (Primary)
+```
+server/
+├── CloudWatcher/
+│   ├── Program.cs
+│   ├── Controllers/
+│   ├── Models/
+│   ├── Services/
+│   └── CloudWatcher.csproj
+└── database/
+    └── migrations/
+```
 
-### .NET Projects (`dotnet/src/`)
-- `AutoGen`: Legacy 0.2-style .NET packages (being deprecated)
-- `Microsoft.AutoGen.*`: New event-driven .NET packages
-- `AutoGen.Core`: Core .NET agent functionality
-- Multiple provider packages: OpenAI, Anthropic, Ollama, etc.
+### Agents (in `.github/agents/`)
+- **Full Auto New.agent.md** - UI Hub & workflow orchestrator (route-only)
+- **Smart Plan Updated.agent.md** - Planning specialist (creates subtasks)
+- **Smart Execute Updated.agent.md** - Execution specialist (runs tasks)
+- **Smart Review Updated.agent.md** - Review specialist (analyzes results)
+- **Agent Builder & Updater.agent.md** - Meta-agent (creates/updates agents)
+- **Tool Builder.agent.md** - Tool creation specialist
+- **Smart Prep Cloud.agent.md** - Cloud execution preparation
 
 ### Key Configuration Files
-- `python/pyproject.toml`: Python workspace and tool configuration
-- `dotnet/global.json`: .NET SDK version requirements  
-- `dotnet/AutoGen.sln`: .NET solution file
-- `python/uv.lock`: Locked Python dependencies
+- `.github/copilot-instructions.md` - This file (master workflow instructions)
+- `tasks.json` - Task backlog for imports
+- `tasks/task-1.json` through `tasks/task-12.json` - Individual task files
+- `Docs/Plan/` - Architecture and design documentation
 
 ## Development Best Practices
 
-### Before Committing Changes
-**ALWAYS run these validation steps:**
+### Workflow Integration Checklist
 
-**Python:**
-```bash
-cd python && source .venv/bin/activate
-poe format    # Fix formatting
-poe lint      # Check code quality  
-poe mypy      # Type checking (6 minutes)
-poe docs-build # Verify docs build (1+ minutes)
-```
+**When starting work:**
+1. ✅ Load copilot-instructions first (this file)
+2. ✅ Start with Full Auto agent (hub/router)
+3. ✅ Let Full Auto load Zen Tasks workflow context
+4. ✅ Follow the phase buttons: Plan → Execute → Review
+5. ✅ All actual work happens in spoke agents, not Full Auto
 
+**When modifying agents:**
+1. ✅ Ensure 2-module system (CHECKLIST + ORCHESTRATOR only, no MODULE 1 or 4)
+2. ✅ Update memory namespace to match agent name
+3. ✅ Include all Zen Tools in tools list
+4. ✅ Set handoffs back to Full Auto (hub-spoke pattern)
+5. ✅ Log all observations to memory via memory tools
+
+**When updating copilot-instructions:**
+1. ✅ Keep section on Zen Tasks integration up-to-date
+2. ✅ Update memory organization when adding agents
+3. ✅ Update task protocol if schema changes
+4. ✅ Reflect .NET project structure accurately
+5. ✅ Test with Full Auto to ensure agents can access tools
+
+### Task Management Workflow
+
+**Creating Tasks:**
+- Use Zen Tasks `addTask()` (never create internal lists)
+- Include: title, description, priority, complexity, tags
+- Set initial status: `pending`
+
+**Executing Tasks:**
+- Use `getNextTask()` to find executable work
+- Call `setTaskStatus()` after each step
+- Log observations to memory (success AND failure)
+
+**Reviewing Work:**
+- Use `listTasks(status=completed)` for analysis
+- Use `updateTask()` to add insights
+- Create discovered tasks if issues block progress
+
+**Before Committing Changes**
 **.NET:**
-```bash  
-cd dotnet && export PATH="$HOME/.dotnet:$PATH"
+```bash
+cd server/CloudWatcher
 dotnet format --verify-no-changes  # Check formatting
-dotnet build --configuration Release --no-restore  # Build (53 seconds)
-dotnet test --configuration Release --filter "Category=UnitV2" --no-build  # Test (25 seconds)
+dotnet build --configuration Debug  # Build
+dotnet test --configuration Debug  # Test (if available)
 ```
 
 ### Key Directories Reference
 ```
-autogen/
-├── python/                    # Python implementation
-│   ├── packages/             # Individual Python packages
-│   ├── docs/                 # Sphinx documentation
-│   ├── samples/              # Example code
-│   └── pyproject.toml        # Workspace configuration
-├── dotnet/                   # .NET implementation  
-│   ├── src/                  # Source projects
-│   ├── test/                 # Test projects
-│   ├── samples/              # Sample applications
-│   └── AutoGen.sln          # Solution file
-├── .github/workflows/        # CI/CD pipelines
-└── docs/                     # Additional documentation
+AAA Weird App Demmo/
+├── .github/
+│   ├── agents/          # All 7 agents with 2-module system
+│   └── copilot-instructions.md  # This file (master workflow)
+├── server/
+│   ├── CloudWatcher/    # .NET API server
+│   └── database/        # Database setup
+├── device/
+│   └── python/          # Device client (Python)
+├── Cloud/               # Cloud storage integration
+├── Docs/Plan/           # Architecture documentation
+└── tasks.json           # Task backlog aggregate
 ```
 
-This framework supports creating both simple single-agent applications and complex multi-agent workflows with support for various LLM providers, tools, and deployment patterns.
+## Workflow Execution Guide
+
+### Full Auto Hub (Entry Point)
+
+When you invoke Full Auto or mention "full auto", it will:
+
+1. **Load Zen Tasks Context** - Get current project state and available tasks
+2. **Display Task Queue** - Show pending, ready, and completed tasks
+3. **Present Phase Buttons** - Offer next phase options
+4. **Route to Specialists** - Hand off to Plan/Execute/Review based on your choice
+
+**Full Auto will NOT execute, plan, or review itself** — it's the router and coordinator.
+
+### Smart Plan (Planning Phase)
+
+When you click "Plan Phase" (or mention "smart plan"), it will:
+
+1. **Receive Goal** - From Full Auto or user input
+2. **Detect Vagueness** - Ask clarifying questions if needed
+3. **Create Subtasks** - Break work into executable steps in Zen Tasks
+4. **Return to Hub** - Present "Ready to Execute?" button
+
+### Smart Execute (Execution Phase)
+
+When you click "Execute Phase" (or mention "smart execute"), it will:
+
+1. **Get Next Tasks** - From Zen Tasks (pending work)
+2. **Run Each Task** - Terminal, file operations, VS Code tools
+3. **Update Status** - Mark complete/failed as it goes
+4. **Log Observations** - Record progress and errors to memory
+5. **Return to Hub** - Present "Ready for Review?" button
+
+### Smart Review (Review Phase)
+
+When you click "Review Phase" (or mention "smart review"), it will:
+
+1. **Analyze Results** - Identify patterns, failures, successes
+2. **Root-Cause Analysis** - Why did things succeed or fail?
+3. **Update Insights** - Add findings to tasks
+4. **Recommend Next** - Suggest replan, continue, or done
+5. **Return to Hub** - Present recommendation buttons
+
+### Agent Builder (Agent Management)
+
+When you need to create or update agents:
+
+1. **Use Agent Builder agent** - Specify what to create/change
+2. **It maintains structure** - 2-module system, consistent tools
+3. **It validates** - Checks for completeness and consistency
+4. **Returns to Hub** - Ready for orchestration
+
+### Tool Builder (Tool Creation)
+
+When you need new MCP tools or integrations:
+
+1. **Use Tool Builder agent** - Specify tool requirements
+2. **It designs specs** - Schema, validation, capabilities
+3. **It implements** - Tool stubs or full implementations
+4. **Returns for review** - Via Smart Review handoff
+
+### Smart Prep Cloud (Cloud Execution)
+
+When tasks benefit from cloud resources:
+
+1. **Smart Plan recommends** - If confidence is sufficient
+2. **Prep Cloud validates** - Environment readiness, dependencies
+3. **Creates artifacts** - GitHub Issues, TODOs, runner config
+4. **Hands off to Cloud Agent** - For autonomous execution
+
+## Agent Modes & Guardrails
+
+### Full Auto (Hub Mode)
+- ✅ DO: Display task queues, route to specialists, update state
+- ✅ DO: Use Zen Tasks to load context and display progress
+- ✅ DO: Present buttons for phase selection
+- ❌ DON'T: Plan, execute, or review tasks directly
+- ❌ DON'T: Create internal task lists in memory
+- ❌ DON'T: Chain to other agents (let user/Full Auto route)
+
+### Smart Plan (Planning Mode)
+- ✅ DO: Analyze goals and detect vagueness
+- ✅ DO: Create subtasks in Zen Tasks
+- ✅ DO: Ask clarifying questions if needed
+- ❌ DON'T: Execute any tasks
+- ❌ DON'T: Review execution results
+- ❌ DON'T: Chain to Smart Execute (return to Full Auto)
+
+### Smart Execute (Execution Mode)
+- ✅ DO: Run subtasks from Zen Tasks
+- ✅ DO: Update task status after each step
+- ✅ DO: Log observations (success and failure)
+- ✅ DO: Continue on errors (don't halt)
+- ❌ DON'T: Plan new tasks
+- ❌ DON'T: Review results
+- ❌ DON'T: Chain to Smart Review (return to Full Auto)
+
+### Smart Review (Review Mode)
+- ✅ DO: Analyze completed and failed tasks
+- ✅ DO: Perform root-cause analysis
+- ✅ DO: Update task insights
+- ✅ DO: Create discovered tasks if needed
+- ❌ DON'T: Execute tasks
+- ❌ DON'T: Plan new work
+- ❌ DON'T: Chain to Smart Plan (return to Full Auto)
+
+### Agent Builder (Meta Mode)
+- ✅ DO: Create/update agents with consistent structure
+- ✅ DO: Preserve tool access and handoffs
+- ✅ DO: Validate 2-module system compliance
+- ❌ DON'T: Disable Docker MCP Toolkit
+- ❌ DON'T: Remove Zen Tools from agents
+- ❌ DON'T: Break hub-spoke routing pattern
+
+### Tool Builder (Tool Mode)
+- ✅ DO: Design MCP tool specifications
+- ✅ DO: Implement with validation
+- ✅ DO: Test with minimal runnable tests
+- ✅ DO: Hand off to Plan/Review if uncertain
+- ❌ DON'T: Ignore missing requirements
+- ❌ DON'T: Chain without planning
+- ❌ DON'T: Skip validation
+
+### Smart Prep Cloud (Cloud Mode)
+- ✅ DO: Validate environment readiness
+- ✅ DO: Generate GitHub Issues with exact commands
+- ✅ DO: Calculate Cloud Confidence (0-100%)
+- ✅ DO: Place TODO breadcrumbs in code
+- ❌ DON'T: Execute tasks locally
+- ❌ DON'T: Skip environment validation
+- ❌ DON'T: Recommend cloud if confidence <50%

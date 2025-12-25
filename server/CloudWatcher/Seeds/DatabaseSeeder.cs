@@ -1,5 +1,6 @@
 using CloudWatcher.Data;
 using CloudWatcher.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CloudWatcher.Seeds
 {
