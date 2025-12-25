@@ -5,7 +5,58 @@
   "status": "pending",
   "priority": "low",
   "dependencies": [],
-  "subtasks": [],
+  "subtasks": [
+    {
+      "title": "Create wireframes for the user interface",
+      "status": "pending",
+      "id": 1
+    },
+    {
+      "title": "Design layout for desktop view",
+      "status": "pending",
+      "id": 2
+    },
+    {
+      "title": "Design layout for mobile view",
+      "status": "pending",
+      "id": 3
+    },
+    {
+      "title": "Develop navigation components",
+      "status": "pending",
+      "id": 4
+    },
+    {
+      "title": "Implement main content sections",
+      "status": "pending",
+      "id": 5
+    },
+    {
+      "title": "Ensure responsiveness across devices",
+      "status": "pending",
+      "id": 6
+    },
+    {
+      "title": "Add accessibility features (e.g., ARIA roles)",
+      "status": "pending",
+      "id": 7
+    },
+    {
+      "title": "Test user interface for responsiveness",
+      "status": "pending",
+      "id": 8
+    },
+    {
+      "title": "Test user interface for accessibility compliance",
+      "status": "pending",
+      "id": 9
+    },
+    {
+      "title": "Refine and optimize UI performance",
+      "status": "pending",
+      "id": 10
+    }
+  ],
   "details": "Ensure responsiveness and accessibility.",
   "complexity": {
     "level": "simple",

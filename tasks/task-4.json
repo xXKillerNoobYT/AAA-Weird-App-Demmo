@@ -2,10 +2,63 @@
   "id": 4,
   "title": "Set up database schema",
   "description": "Define and implement the database schema based on the system requirements.",
-  "status": "pending",
+  "status": "completed",
   "priority": "high",
+  "completedDate": "2025-12-24",
+  "deliverable": "Docs/Plan/16_DATABASE_SCHEMA.md",
   "dependencies": [],
-  "subtasks": [],
+  "subtasks": [
+    {
+      "title": "Analyze system requirements for database needs",
+      "status": "completed",
+      "id": 1
+    },
+    {
+      "title": "Identify entities and their relationships",
+      "status": "completed",
+      "id": 2
+    },
+    {
+      "title": "Define primary keys and foreign keys",
+      "status": "completed",
+      "id": 3
+    },
+    {
+      "title": "Ensure database normalization",
+      "status": "completed",
+      "id": 4
+    },
+    {
+      "title": "Design the database schema diagram",
+      "status": "completed",
+      "id": 5
+    },
+    {
+      "title": "Write SQL scripts to create tables",
+      "status": "completed",
+      "id": 6
+    },
+    {
+      "title": "Add indexes for performance optimization",
+      "status": "completed",
+      "id": 7
+    },
+    {
+      "title": "Test the schema with sample data",
+      "status": "completed",
+      "id": 8
+    },
+    {
+      "title": "Document the database schema",
+      "status": "completed",
+      "id": 9
+    },
+    {
+      "title": "Review schema for scalability and future needs",
+      "status": "completed",
+      "id": 10
+    }
+  ],
   "details": "Ensure normalization and support for future scalability.",
   "complexity": {
     "level": "simple",

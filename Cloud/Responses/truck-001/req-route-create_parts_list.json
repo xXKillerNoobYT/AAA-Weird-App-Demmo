@@ -1,0 +1,11 @@
+{
+  "request_id": "req-route-create_parts_list",
+  "status": "success",
+  "data": {
+    "parts_list_id": "10599cf0-e065-4bba-8100-698abf070a86",
+    "status": "draft",
+    "message": "Parts list created successfully"
+  },
+  "timestamp": "2025-12-24T22:27:53.2174216Z",
+  "build_signature": "20251224222752"
+}

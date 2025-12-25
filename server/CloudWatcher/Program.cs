@@ -1,94 +1,94 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.IO;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using CloudWatcher.CloudStorage;
+using CloudWatcher.RequestHandling;
 
-class Program
+var builder = WebApplication.CreateBuilder(args);
+
+// Compute repo root
+var repoRoot = Directory.GetParent(Directory.GetCurrentDirectory())!.Parent!.FullName;
+var cloudRoot = Path.Combine(repoRoot, "Cloud");
+
+// Register services
+builder.Services.AddScoped<ICloudStorageProvider, LocalFileStorageProvider>();
+builder.Services.AddScoped(sp => new RequestHandler(sp.GetRequiredService<ICloudStorageProvider>()));
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
+
+// Add Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
 {
-    // Compute repo root from current working directory (project folder): CloudWatcher -> server -> repo root
-    static string RepoRoot = Directory.GetParent(Directory.GetCurrentDirectory())!.Parent!.FullName;
-    static string CloudRoot = Path.Combine(RepoRoot, "Cloud");
-    static string RequestsRoot = Path.Combine(CloudRoot, "Requests");
-    static string ResponsesRoot = Path.Combine(CloudRoot, "Responses");
-
-    static void Main()
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
     {
-        Directory.CreateDirectory(RequestsRoot);
-        Directory.CreateDirectory(ResponsesRoot);
-        Console.WriteLine($"RepoRoot: {RepoRoot}");
-        Console.WriteLine($"CloudRoot: {CloudRoot}");
-        Console.WriteLine($"CloudWatcher started. Watching: {RequestsRoot}");
-
-        using var watcher = new FileSystemWatcher(RequestsRoot, "*.json")
+        Title = "CloudWatcher API",
+        Version = "v1",
+        Description = "RESTful API for managing device requests and responses",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
         {
-            IncludeSubdirectories = true,
-            EnableRaisingEvents = true,
-            NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite
-        };
-
-        watcher.Created += async (s, e) => await OnNewRequest(e.FullPath);
-        watcher.Changed += async (s, e) => await OnFileChanged(e.FullPath);
-
-        // Process any existing JSON files at startup
-        foreach (var file in Directory.EnumerateFiles(RequestsRoot, "*.json", SearchOption.AllDirectories))
-        {
-            await OnNewRequest(file);
+            Name = "CloudWatcher Team"
         }
+    });
 
-        Console.WriteLine("Press Ctrl+C to exit.");
-        // Prevent exit
-        new ManualResetEvent(false).WaitOne();
-    }
-
-    static async Task OnFileChanged(string path)
+    // Add XML documentation if file exists
+    var xmlFile = Path.Combine(AppContext.BaseDirectory, "CloudWatcher.xml");
+    if (File.Exists(xmlFile))
     {
-        // Optional: handle file writes completing
+        options.IncludeXmlComments(xmlFile);
     }
+});
 
-    static async Task OnNewRequest(string path)
+// Add logging
+builder.Services.AddLogging(options =>
+{
+    options.AddConsole();
+    options.AddDebug();
+});
+
+var app = builder.Build();
+
+// Create required directories
+Directory.CreateDirectory(Path.Combine(cloudRoot, "Requests"));
+Directory.CreateDirectory(Path.Combine(cloudRoot, "Responses"));
+
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
     {
-        try
-        {
-            // Wait briefly to ensure writer finished
-            await Task.Delay(200);
-
-            var deviceFolder = Directory.GetParent(path)!.Name; // e.g., truck-001
-            var fileContent = await File.ReadAllTextAsync(path);
-            var doc = JsonDocument.Parse(fileContent);
-
-            var requestId = doc.RootElement.TryGetProperty("request_id", out var rid) ? rid.GetString() : null;
-            var deviceId = doc.RootElement.TryGetProperty("device_id", out var did) ? did.GetString() : deviceFolder;
-            var requestType = doc.RootElement.TryGetProperty("request_type", out var rt) ? rt.GetString() : "unknown";
-
-            if (string.IsNullOrWhiteSpace(requestId))
-            {
-                requestId = Path.GetFileNameWithoutExtension(path);
-            }
-
-            Console.WriteLine($"Processing request: {requestId} from {deviceId} ({requestType})");
-
-            // Minimal demo response
-            var response = new
-            {
-                request_id = requestId,
-                status = "success",
-                data = new { echo = requestType, received_at = DateTime.UtcNow.ToString("o") },
-                timestamp = DateTime.UtcNow.ToString("o")
-            };
-
-            var deviceResponseDir = Path.Combine(ResponsesRoot, deviceId!);
-            Directory.CreateDirectory(deviceResponseDir);
-
-            var responsePath = Path.Combine(deviceResponseDir, $"{requestId}.json");
-            var json = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true });
-            await File.WriteAllTextAsync(responsePath, json);
-
-            // Archive or delete request file after processing
-            File.Delete(path);
-            Console.WriteLine($"Wrote response: {responsePath}");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing request {path}: {ex}");
-        }
-    }
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "CloudWatcher API v1");
+        options.RoutePrefix = string.Empty; // Serve at root
+    });
 }
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+
+// Add health check endpoint
+app.MapGet("/health", () => new { status = "healthy", timestamp = DateTime.UtcNow.ToString("o") })
+    .WithName("HealthCheck")
+    .WithOpenApi()
+    .Produces(200);
+
+// Add info endpoint
+app.MapGet("/info", () => new
+{
+    service = "CloudWatcher",
+    version = "1.0.0",
+    environment = app.Environment.EnvironmentName,
+    cloudRoot = cloudRoot,
+    timestamp = DateTime.UtcNow.ToString("o")
+})
+    .WithName("ServiceInfo")
+    .WithOpenApi()
+    .Produces(200);
+
+await app.RunAsync();

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CloudWatcher")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ba07ecf14d7eb388a5037e1a568eae4fa0eb90e4")]
 [assembly: System.Reflection.AssemblyProductAttribute("CloudWatcher")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CloudWatcher")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

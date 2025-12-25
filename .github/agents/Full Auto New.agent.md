@@ -11,11 +11,11 @@ handoffs:
     send: true
   - label: Go to Smart Execute
     agent: Smart Execute
-    prompt: Start execution phase with planned tasks
+    prompt: Start execution phase with planned tasks, you got agents use them small defined tasks.
     send: true
   - label: Go to Smart Review
     agent: Smart Review
-    prompt: Start review phase with execution results
+    prompt: Start review phase with execution results cheack the problems you got agents use them small defined tasks.
     send: true
 ---
 
@@ -74,12 +74,21 @@ Use this module to validate every output before returning it.
 - [ ] MPC overview fetched and displayed to user
 - [ ] Task state clearly shown (pending/in-progress/completed)
 - [ ] Button options presented for next phase
-- [ ] Handoff to spoke includes all necessary context
+- [ ] Handoff to spoke includes all necessary context (task ID, priority, complexity, recommended subtasks)
 - [ ] Task status updated when spoke returns
 - [ ] Workflow iteration logged to MPC observations
- - [ ] Route-only enforced: no planning/execution/review performed by Full Auto
- - [ ] Available agents enumerated from `.github/agents/`
- - [ ] Routing decision logged (agent + reason)
+- [ ] Route-only enforced: no planning/execution/review performed by Full Auto
+- [ ] Available agents enumerated from `.github/agents/`
+- [ ] Routing decision logged (agent + reason)
+- [ ] Task protocol validated (Status, Priority, Complexity 1-10, Recommended Subtasks 0-10)
+
+**Task Protocol Standard:**
+All tasks must include:
+- **Status:** pending | in-progress | completed
+- **Priority:** low | medium | high
+- **Complexity:** 1-10 scale with label (simple 1-2, moderate 2-5, complex 5-7, veryComplex 7-10)
+- **Recommended Subtasks:** 0-10 range
+- **Description:** 2-3 sentences explaining the work
 
 ### MODULE 3 — TASK ORCHESTRATOR (Planner)
 
@@ -204,8 +213,16 @@ Task title: [user's goal]
 
 Your responsibilities:
 1. Analyze goal for vagueness (ask QA survey if needed)
-2. Create subtasks in MPC for execution
-3. Return to Full Auto with "Ready to Execute?" button
+2. Create subtasks in MPC following task protocol
+3. Include: Status, Priority, Complexity (1-10), Recommended Subtasks (0-10)
+4. Return to Full Auto with "Ready to Execute?" button
+
+**Task Protocol to Follow:**
+- Status: pending | in-progress | completed
+- Priority: low | medium | high
+- Complexity: 1-10 (simple 1-2, moderate 2-5, complex 5-7, veryComplex 7-10)
+- Recommended Subtasks: 0-10 range
+- Description: 2-3 sentences
 
 Use Docker MCP Toolkit to select tools:
 - Use mcp-find to discover analysis tools
@@ -254,8 +271,19 @@ Your responsibilities:
 1. Search MPC observations from execution
 2. Analyze patterns and root causes
 3. Update task status and add insights
-4. Decide: Ready to replan or done?
-5. Return to Full Auto with button
+4. Create discovered tasks for minor issues (Task D[N] format)
+5. Follow task protocol for discovered tasks
+6. Decide: Ready to replan or done?
+7. Return to Full Auto with button
+
+**Discovered Tasks Protocol:**
+When finding minor issues, create tasks with:
+- Status: pending
+- Priority: low | medium | high
+- Complexity: 1-10 scale with label
+- Recommended Subtasks: 0-10
+- Description: 2-3 sentences
+- Proposed subtasks breakdown
 
 Use Docker MCP Toolkit to select tools:
 - Use mcp-find to discover analysis tools

@@ -1,7 +1,0 @@
-{
-  "request_type": "get_parts",
-  "request_id": "req-test-002",
-  "timestamp": "2025-12-21T12:01:00Z",
-  "device_id": "truck-001",
-  "filters": {"is_active": true}
-}

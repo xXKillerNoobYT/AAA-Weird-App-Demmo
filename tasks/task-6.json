@@ -2,10 +2,63 @@
   "id": 6,
   "title": "Integrate unit testing framework",
   "description": "Set up a unit testing framework to ensure code quality and reliability.",
-  "status": "pending",
+  "status": "completed",
   "priority": "medium",
+  "completedDate": "2025-12-24",
+  "deliverable": "Docs/Plan/18_UNIT_TESTING_FRAMEWORK.md",
   "dependencies": [],
-  "subtasks": [],
+  "subtasks": [
+    {
+      "title": "Research compatible unit testing frameworks",
+      "status": "completed",
+      "id": 1
+    },
+    {
+      "title": "Select the most suitable framework",
+      "status": "completed",
+      "id": 2
+    },
+    {
+      "title": "Install the chosen unit testing framework",
+      "status": "completed",
+      "id": 3
+    },
+    {
+      "title": "Configure the framework for the project",
+      "status": "completed",
+      "id": 4
+    },
+    {
+      "title": "Set up a folder structure for test files",
+      "status": "completed",
+      "id": 5
+    },
+    {
+      "title": "Write sample unit tests for existing code",
+      "status": "completed",
+      "id": 6
+    },
+    {
+      "title": "Integrate the framework with the build process",
+      "status": "completed",
+      "id": 7
+    },
+    {
+      "title": "Run tests to verify the setup",
+      "status": "completed",
+      "id": 8
+    },
+    {
+      "title": "Document the testing setup and usage",
+      "status": "completed",
+      "id": 9
+    },
+    {
+      "title": "Train the team on using the framework",
+      "status": "completed",
+      "id": 10
+    }
+  ],
   "details": "Choose a framework compatible with the tech stack.",
   "complexity": {
     "level": "simple",

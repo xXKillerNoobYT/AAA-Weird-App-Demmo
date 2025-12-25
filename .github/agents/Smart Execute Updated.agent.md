@@ -3,12 +3,20 @@ name: Smart Execute
 description: 'Execution agent that runs subtasks from MPC, updates task status, records observations, and returns to Full Auto with Ready-to-Review button.'
 argument-hint: Execute planned tasks from MPC
 tools:
-  ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'mcp_docker/*', 'agent', 'pylance-mcp-server/*', 'copilot-container-tools/*', 'memory', 'github.vscode-pull-request-github/copilotCodingAgent', 'github.vscode-pull-request-github/issue_fetch', 'github.vscode-pull-request-github/suggest-fix', 'github.vscode-pull-request-github/searchSyntax', 'github.vscode-pull-request-github/doSearch', 'github.vscode-pull-request-github/renderIssues', 'github.vscode-pull-request-github/activePullRequest', 'github.vscode-pull-request-github/openPullRequest', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'ms-python.python/getPythonEnvironmentInfo', 'ms-python.python/getPythonExecutableCommand', 'ms-python.python/installPythonPackage', 'ms-python.python/configurePythonEnvironment', 'todo']
+  ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'copilot-container-tools/*', 'mcp_docker/*', 'agent', 'pylance-mcp-server/*', 'memory', 'github.vscode-pull-request-github/copilotCodingAgent', 'github.vscode-pull-request-github/issue_fetch', 'github.vscode-pull-request-github/suggest-fix', 'github.vscode-pull-request-github/searchSyntax', 'github.vscode-pull-request-github/doSearch', 'github.vscode-pull-request-github/renderIssues', 'github.vscode-pull-request-github/activePullRequest', 'github.vscode-pull-request-github/openPullRequest', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'ms-python.python/getPythonEnvironmentInfo', 'ms-python.python/getPythonExecutableCommand', 'ms-python.python/installPythonPackage', 'ms-python.python/configurePythonEnvironment', 'todo']
 
 handoffs:
   - label: Back to Full Auto
     agent: Full Auto
     prompt: Execution complete - ready for review phase
+    send: true
+  - label: Go to Smart Review
+    agent: Smart Review
+    prompt: Start review phase with execution results
+    send: true
+  - label: Continue Execute
+    agent: Smart Execute
+    prompt: Continue execution phase with remaining tasks, you got agents use them small defind tasks.
     send: true
 ---
 

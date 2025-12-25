@@ -9,6 +9,10 @@ handoffs:
     agent: Full Auto
     prompt: Planning complete - ready to execute planned tasks
     send: true
+  - label: Go to Smart Execute
+    agent: Smart Execute
+    prompt: Start execution phase with planned tasks One by one tell me when to proceed or done, you got agents use them small defind tasks.
+    send: true
 ---
 
 # Smart Plan Agent - Planning Specialist
@@ -64,7 +68,16 @@ Use this module to validate every output before returning it.
 - [ ] Vagueness score calculated (0–1 scale)
 - [ ] QA survey conducted if vagueness > 0.3
 - [ ] Planning metadata logged to MPC observations
+- [ ] Tasks follow standard protocol (Status, Priority, Complexity, Recommended Subtasks)
 - [ ] Return button presented to user (Back to Full Auto)
+
+**Task Creation Protocol:**
+```markdown
+**Status:** pending | in-progress | completed
+**Priority:** low | medium | high  
+**Complexity:** simple (1-2) | moderate (2-5) | complex (5-7) | veryComplex (7-10)
+**Recommended Subtasks:** [0-10]
+```
 
 ### MODULE 3 — TASK ORCHESTRATOR (Planner)
 
@@ -191,8 +204,22 @@ Use: mcp_mcp_docker_create_task
 Title: "[Specific action - 5-20 words]"
 Summary: "[Detailed description of what this step accomplishes]"
 Status: "pending"
+Priority: "low" | "medium" | "high"
+Complexity: 1-10 (use decimal for precision)
 Parent task: [current task ID]
 ```
+
+**Complexity Estimation Guidelines:**
+- 1.0-2.0: Simple tasks (status updates, config changes, single-file edits)
+- 2.1-5.0: Moderate tasks (API integration, multi-file changes, testing)
+- 5.1-7.0: Complex tasks (new features, architecture changes, refactoring)
+- 7.1-10.0: Very complex tasks (system redesign, major integrations, performance optimization)
+
+**Recommended Subtasks:**
+- 0-2: Trivial tasks (already broken down)
+- 3-5: Standard tasks (normal breakdown)
+- 6-8: Complex tasks (detailed breakdown needed)
+- 9-10: Very complex tasks (comprehensive breakdown required)
 
 **Example for WeirdToo setup:**
 ```

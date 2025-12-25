@@ -4,7 +4,38 @@
   "status": "pending",
   "priority": "low",
   "dependencies": [],
-  "subtasks": [],
+  "subtasks": [
+    {
+      "title": "Review the project plan",
+      "status": "pending",
+      "id": 1
+    },
+    {
+      "title": "Identify development tasks",
+      "status": "pending",
+      "id": 2
+    },
+    {
+      "title": "Organize tasks into categories",
+      "status": "pending",
+      "id": 3
+    },
+    {
+      "title": "Create a checklist for tasks",
+      "status": "pending",
+      "id": 4
+    },
+    {
+      "title": "Ensure checklist covers all areas",
+      "status": "pending",
+      "id": 5
+    },
+    {
+      "title": "Format checklist for clarity",
+      "status": "pending",
+      "id": 6
+    }
+  ],
   "id": 2,
   "complexity": {
     "level": "simple",

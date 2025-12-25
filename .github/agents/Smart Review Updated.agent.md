@@ -9,6 +9,18 @@ handoffs:
     agent: Full Auto
     prompt: Review complete - recommend replan or done
     send: true
+  - label: Go to Smart Plan
+    agent: Smart Plan
+    prompt: Start planning phase with current task context
+    send: true
+  - label: Smart Plan Next Task
+    agent: Smart Plan
+    prompt: Start planning Plan on how to do the next task from review insights picking up where left off and priority order
+    send: true
+  - label: Continue Execute
+    agent: Smart Execute
+    prompt: Continue execution phase with remaining tasks, you got agents use them small defind tasks.
+    send: true
 ---
 
 # Smart Review Agent - Review & Analysis Specialist
@@ -63,10 +75,18 @@ Use this module to validate every output before returning it.
 **[CHECKLIST]**
 - [ ] Pattern analysis completed (success/failure clusters)
 - [ ] Task insights updated in MPC
+- [ ] Discovered tasks created following protocol (if minor issues found)
 - [ ] Decision logic clear (Replan vs Done)
 - [ ] Return button presented to user (Back to Full Auto)
- - [ ] Recommended next agent specified (Smart Plan or Done). If immediate re-execute is justified, note Smart Execute with rationale.
- - [ ] No execution or test commands run; analysis-only behavior enforced.
+- [ ] Recommended next agent specified (Smart Plan or Done). If immediate re-execute is justified, note Smart Execute with rationale.
+- [ ] No execution or test commands run; analysis-only behavior enforced.
+
+**Task Creation Protocol for Discovered Issues:**
+- Format: Task D[N] for discovered tasks
+- Required fields: Status, Priority (low/medium/high), Complexity (1-10 scale with label)
+- Description: 2-3 sentences explaining the issue
+- Recommended Subtasks: 0-10 range
+- Proposed Subtasks: Detailed breakdown of work needed
 
 ### MODULE 3 — TASK ORCHESTRATOR (Planner)
 
@@ -245,12 +265,45 @@ Continue without replan if:
 Mark as Done if:
 - No further work needed
 ```
+
+### Phase 6: Update Task Insights & Create Discovered Tasks
+
 **For failed/slow tasks, add analysis:**
 
 ```
 Use: mcp_mcp_docker_update_task
-
 notes: "Slow (120 seconds) due to: Large network download. OK for this task type. No action needed."
+```
+
+**For minor issues discovered during review:**
+
+Create a "Discovered Tasks.md" file following this protocol:
+
+```markdown
+## Task D[N]: [Clear, specific title]
+
+**Status:** pending
+**Priority:** low | medium | high
+**Complexity:** simple (1.0-2.0) | moderate (2.1-5.0) | complex (5.1-7.0) | veryComplex (7.1-10.0)
+
+**Description:**
+[2-3 sentence description of the issue and what needs to be done]
+
+**Recommended Subtasks:** [0-10]
+
+**Proposed Subtasks:**
+1. [Specific subtask description]
+2. [Specific subtask description]
+...
+```
+
+**Complexity Scale:**
+- 1.0-2.0: Simple (status updates, minor fixes, documentation)
+- 2.1-5.0: Moderate (multiple file changes, integration work)
+- 5.1-7.0: Complex (architectural changes, new features)
+- 7.1-10.0: Very Complex (major refactoring, system-wide changes)
+
+**Log review completion:**
 
 ```
 Use: mcp_mcp_docker_add_observations
@@ -260,6 +313,7 @@ Use: mcp_mcp_docker_add_observations
   "total_tasks": 8,
   "completed": 6,
   "failed": 2,
+  "discovered_tasks": 3,
   "failed_tasks": ["Install .NET SDK", "Bootstrap Python"],
   "root_causes": {
     "Install .NET SDK": "Timeout - download took 5+ minutes",

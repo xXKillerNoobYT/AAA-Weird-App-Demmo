@@ -1,0 +1,11 @@
+{
+  "request_id": "req-route-ping",
+  "status": "success",
+  "data": {
+    "pong": true,
+    "timestamp": "2025-12-24T22:27:53.9151098Z",
+    "server_status": "online"
+  },
+  "timestamp": "2025-12-24T22:27:53.9151649Z",
+  "build_signature": "20251224222752"
+}
