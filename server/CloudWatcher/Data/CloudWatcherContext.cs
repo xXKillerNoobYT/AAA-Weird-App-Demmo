@@ -39,6 +39,7 @@ namespace CloudWatcher.Data
         public DbSet<StockLevel> StockLevels { get; set; } = null!;
         public DbSet<Location> Locations { get; set; } = null!;
         public DbSet<PartConsumable> PartConsumables { get; set; } = null!;
+        public DbSet<InventoryAuditLog> InventoryAuditLogs { get; set; } = null!;
 
         // Orders & Workflows
         public DbSet<Order> Orders { get; set; } = null!;

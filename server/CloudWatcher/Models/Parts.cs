@@ -16,6 +16,10 @@ namespace CloudWatcher.Models
         public decimal StandardPrice { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+
+        // Navigation properties
+        public virtual ICollection<PartVariant> Variants { get; set; } = new List<PartVariant>();
+        public virtual ICollection<Inventory> InventoryRecords { get; set; } = new List<Inventory>();
     }
 
     /// <summary>
@@ -69,6 +73,9 @@ namespace CloudWatcher.Models
         public string? Address { get; set; }
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        public virtual ICollection<Inventory> InventoryRecords { get; set; } = new List<Inventory>();
     }
 
     /// <summary>
@@ -83,6 +90,10 @@ namespace CloudWatcher.Models
         public int ReorderLevel { get; set; }
         public int ReorderQuantity { get; set; }
         public DateTime LastInventoryCheck { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        public virtual Part? Part { get; set; }
+        public virtual Location? Location { get; set; }
     }
 
     /// <summary>
@@ -105,5 +116,24 @@ namespace CloudWatcher.Models
         public Guid LocationId { get; set; }
         public int QuantityConsumed { get; set; }
         public DateTime LastConsumedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// InventoryAuditLog - tracks all changes to inventory records
+    /// </summary>
+    public class InventoryAuditLog
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid InventoryId { get; set; }
+        public Guid PartId { get; set; }
+        public Guid LocationId { get; set; }
+        public string ChangeType { get; set; } = null!; // CREATE, UPDATE, DELETE, ADJUST
+        public int OldQuantity { get; set; }
+        public int NewQuantity { get; set; }
+        public int OldReorderLevel { get; set; }
+        public int NewReorderLevel { get; set; }
+        public string ChangedBy { get; set; } = null!; // User.Identity.Name
+        public DateTime ChangedAt { get; set; } = DateTime.UtcNow;
+        public string? Notes { get; set; }
     }
 }

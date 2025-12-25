@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using CloudWatcher.Data;
 using System;
 using System.Threading.Tasks;
+using System.Reflection;
 
 namespace CloudWatcher.Controllers
 {
@@ -11,7 +13,9 @@ namespace CloudWatcher.Controllers
     /// </summary>
     [ApiController]
     [Route("health")]
+    [Route("api/v2/health")]
     [Produces("application/json")]
+    [AllowAnonymous]
     public class HealthController : ControllerBase
     {
         private readonly CloudWatcherContext _dbContext;
@@ -83,6 +87,126 @@ namespace CloudWatcher.Controllers
                 response.ErrorMessage = $"Database query failed: {ex.Message}";
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, response);
             }
+        }
+
+        /// <summary>
+        /// GET /health/live
+        /// Liveness probe - confirms process is running
+        /// </summary>
+        /// <returns>200 OK if process is alive</returns>
+        [HttpGet("live")]
+        public ActionResult Alive()
+        {
+            _logger.LogInformation("Liveness check requested");
+            return Ok();
+        }
+
+        /// <summary>
+        /// GET /health/ready
+        /// Readiness probe - confirms ready to serve traffic
+        /// </summary>
+        /// <returns>200 OK if ready</returns>
+        [HttpGet("ready")]
+        public async Task<ActionResult<HealthResponse>> Ready()
+        {
+            _logger.LogInformation("Readiness check requested");
+
+            var response = new HealthResponse
+            {
+                Status = "ready",
+                Timestamp = DateTime.UtcNow,
+                Version = GetAssemblyVersion()
+            };
+
+            try
+            {
+                var canConnect = await _dbContext.Database.CanConnectAsync();
+                response.Database = canConnect ? "connected" : "disconnected";
+
+                if (!canConnect)
+                {
+                    _logger.LogWarning("Readiness check failed: Database not connected");
+                    return StatusCode(StatusCodes.Status503ServiceUnavailable, response);
+                }
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Readiness check failed");
+                response.Status = "not-ready";
+                response.Database = "error";
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, response);
+            }
+        }
+
+        /// <summary>
+        /// GET /health-legacy
+        /// Legacy health endpoint for backward compatibility
+        /// </summary>
+        /// <returns>Health status</returns>
+        [HttpGet("/health-legacy")]
+        public async Task<ActionResult<object>> HealthLegacy()
+        {
+            _logger.LogInformation("Legacy health check requested");
+
+            try
+            {
+                var canConnect = await _dbContext.Database.CanConnectAsync();
+                return Ok(new
+                {
+                    status = canConnect ? "healthy" : "unhealthy",
+                    timestamp = DateTime.UtcNow,
+                    service = "CloudWatcher",
+                    version = GetAssemblyVersion(),
+                    database = canConnect ? "connected" : "disconnected"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Legacy health check failed");
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+                {
+                    status = "unhealthy",
+                    timestamp = DateTime.UtcNow,
+                    service = "CloudWatcher",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// GET /info
+        /// Service information endpoint
+        /// </summary>
+        /// <returns>Service metadata</returns>
+        [HttpGet("/info")]
+        public ActionResult<object> Info()
+        {
+            _logger.LogInformation("Service info requested");
+            return Ok(new
+            {
+                serviceName = "CloudWatcher API",
+                version = GetAssemblyVersion(),
+                environment = System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown",
+                timestamp = DateTime.UtcNow,
+                features = new[]
+                {
+                    "OAuth2 Authentication",
+                    "JWT Token Validation",
+                    "Role-Based Access Control",
+                    "Request/Response Processing",
+                    "Cloud Storage Integration"
+                }
+            });
+        }
+
+        private string GetAssemblyVersion()
+        {
+            var version = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+                .InformationalVersion ?? "1.0.0";
+            return version;
         }
     }
 

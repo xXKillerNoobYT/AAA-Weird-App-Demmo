@@ -125,13 +125,36 @@ namespace CloudWatcher.Controllers
                 var totalCount = await query.CountAsync();
 
                 // Apply sorting (most recent first) and pagination
-                var requests = await query
+                var requestIds = await query
                     .OrderByDescending(r => r.CreatedAt)
                     .Skip(offset)
                     .Take(limit)
-                    .Include(r => r.RequestMetadata)
-                    .Include(r => r.CloudFileReferences)
-                    .Include(r => r.Responses)
+                    .Select(r => r.Id)
+                    .ToListAsync();
+
+                // Get counts for metadata, responses, and cloud references
+                var metadataCounts = await _dbContext.RequestMetadata
+                    .Where(rm => requestIds.Contains(rm.RequestId))
+                    .GroupBy(rm => rm.RequestId)
+                    .Select(g => new { RequestId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.RequestId, x => x.Count);
+
+                var responseCounts = await _dbContext.Responses
+                    .Where(r => requestIds.Contains(r.RequestId))
+                    .GroupBy(r => r.RequestId)
+                    .Select(g => new { RequestId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.RequestId, x => x.Count);
+
+                var cloudRefCounts = await _dbContext.CloudFileReferences
+                    .Where(cf => requestIds.Contains(cf.RequestId))
+                    .GroupBy(cf => cf.RequestId)
+                    .Select(g => new { RequestId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.RequestId, x => x.Count);
+
+                // Get the request objects again (for mapping)
+                var requests = await _dbContext.Requests.AsNoTracking()
+                    .Where(r => requestIds.Contains(r.Id))
+                    .OrderByDescending(r => r.CreatedAt)
                     .ToListAsync();
 
                 // Map to DTOs
@@ -143,9 +166,9 @@ namespace CloudWatcher.Controllers
                     Status = r.Status,
                     CreatedAt = r.CreatedAt,
                     UpdatedAt = r.UpdatedAt,
-                    MetadataCount = r.RequestMetadata?.Count ?? 0,
-                    ResponseCount = r.Responses?.Count ?? 0,
-                    CloudFileReferenceCount = r.CloudFileReferences?.Count ?? 0
+                    MetadataCount = metadataCounts.ContainsKey(r.Id) ? metadataCounts[r.Id] : 0,
+                    ResponseCount = responseCounts.ContainsKey(r.Id) ? responseCounts[r.Id] : 0,
+                    CloudFileReferenceCount = cloudRefCounts.ContainsKey(r.Id) ? cloudRefCounts[r.Id] : 0
                 }).ToList();
 
                 var response = new ListRequestsResponse
@@ -153,10 +176,9 @@ namespace CloudWatcher.Controllers
                     Requests = requestDtos,
                     Pagination = new PaginationInfo
                     {
-                        Total = totalCount,
-                        Limit = limit,
-                        Offset = offset,
-                        HasMore = (offset + limit) < totalCount
+                        Page = offset / limit,
+                        PageSize = limit,
+                        TotalItems = totalCount
                     }
                 };
 

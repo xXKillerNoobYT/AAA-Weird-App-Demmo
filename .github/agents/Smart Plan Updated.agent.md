@@ -3,7 +3,7 @@ name: Smart Plan
 description: 'Planning agent that analyzes user goals, detects vagueness, creates subtasks in MPC, and returns to Full Auto with Ready-to-Execute button.'
 argument-hint: Describe your goal for planning analysis
 tools:
-  ['read', 'search', 'web', 'mcp_docker/*', 'memory', 'todo', 'barradevdigitalsolutions.zen-tasks-copilot/loadWorkflowContext', 'barradevdigitalsolutions.zen-tasks-copilot/listTasks', 'barradevdigitalsolutions.zen-tasks-copilot/addTask', 'barradevdigitalsolutions.zen-tasks-copilot/getTask', 'barradevdigitalsolutions.zen-tasks-copilot/updateTask', 'barradevdigitalsolutions.zen-tasks-copilot/setTaskStatus', 'barradevdigitalsolutions.zen-tasks-copilot/getNextTask', 'barradevdigitalsolutions.zen-tasks-copilot/parseRequirements']
+  ['read', 'search', 'web', 'mcp_docker/*', '4regab.tasksync-chat/askUser', 'memory', 'todo', 'barradevdigitalsolutions.zen-tasks-copilot/loadWorkflowContext', 'barradevdigitalsolutions.zen-tasks-copilot/listTasks', 'barradevdigitalsolutions.zen-tasks-copilot/addTask', 'barradevdigitalsolutions.zen-tasks-copilot/getTask', 'barradevdigitalsolutions.zen-tasks-copilot/updateTask', 'barradevdigitalsolutions.zen-tasks-copilot/setTaskStatus', 'barradevdigitalsolutions.zen-tasks-copilot/getNextTask', 'barradevdigitalsolutions.zen-tasks-copilot/parseRequirements']
 handoffs:
   - label: Back to Full Auto
     agent: Full Auto

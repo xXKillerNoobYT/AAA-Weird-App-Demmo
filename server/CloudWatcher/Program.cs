@@ -8,6 +8,8 @@ using CloudWatcher.RequestHandling;
 using CloudWatcher.Data;
 using CloudWatcher.Middleware;
 using CloudWatcher.Auth;
+using CloudWatcher.Services;
+using CloudWatcher.WebSockets;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +57,10 @@ else
 // Register cloud storage services
 builder.Services.AddScoped<ICloudStorageProvider, LocalFileStorageProvider>();
 builder.Services.AddScoped(sp => new RequestHandler(sp.GetRequiredService<ICloudStorageProvider>()));
+
+// Register WebSocket services
+builder.Services.AddSingleton<WebSocketConnectionPool>();
+builder.Services.AddScoped<WebSocketMessageRouter>();
 
 // ============================================================================
 // CORS CONFIGURATION
@@ -180,6 +186,12 @@ app.UseHttpsRedirection();
 // Enable CORS
 app.UseCors("AllowDeviceAndMobileClients");
 
+// Enable WebSockets
+app.UseWebSockets(new WebSocketOptions
+{
+    KeepAliveInterval = TimeSpan.FromSeconds(30)
+});
+
 // Add authentication middleware
 app.UseAuthentication();
 
@@ -213,25 +225,7 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
     }
 });
 
-// Simpler health check for load balancers
-app.MapGet("/health/live", () => Results.Ok(new { status = "alive", timestamp = DateTime.UtcNow.ToString("o") }))
-    .WithName("HealthCheckLiveness")
-    .WithOpenApi()
-    .Produces(200);
-
-// Detailed health check for readiness
-app.MapGet("/health/ready", async (Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckService healthCheckService) =>
-{
-    var result = await healthCheckService.CheckHealthAsync();
-    return result.Status == Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy
-        ? Results.Ok(new { status = "ready", timestamp = DateTime.UtcNow.ToString("o") })
-        : Results.StatusCode(503);
-})
-    .WithName("HealthCheckReadiness")
-    .WithOpenApi()
-    .Produces(200)
-    .Produces(503);
-
+// Note: /health/live and /health/ready are handled by HealthController
 // Legacy health endpoint (kept for backward compatibility)
 app.MapGet("/health-legacy", () => new { status = "healthy", timestamp = DateTime.UtcNow.ToString("o") })
     .WithName("HealthCheckLegacy")
@@ -239,17 +233,6 @@ app.MapGet("/health-legacy", () => new { status = "healthy", timestamp = DateTim
     .ExcludeFromDescription()
     .Produces(200);
 
-// Add info endpoint
-app.MapGet("/info", () => new
-{
-    service = "CloudWatcher",
-    version = "1.0.0",
-    environment = app.Environment.EnvironmentName,
-    cloudRoot = cloudRoot,
-    timestamp = DateTime.UtcNow.ToString("o")
-})
-    .WithName("ServiceInfo")
-    .WithOpenApi()
-    .Produces(200);
+// Note: /info endpoint is handled by HealthController
 
 await app.RunAsync();

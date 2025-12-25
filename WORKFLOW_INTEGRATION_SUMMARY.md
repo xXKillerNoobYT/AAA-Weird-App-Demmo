@@ -7,6 +7,7 @@ All 7 agents are now fully integrated with **copilot-instructions.md** and **Zen
 ### Core Integration Points
 
 #### 1. **Full Auto Hub** (Orchestration Layer)
+
 - ✅ Router-only agent (no execution/planning/review)
 - ✅ Displays task queue from Zen Tasks
 - ✅ Routes to specialists via buttons (Plan → Execute → Review)
@@ -15,6 +16,7 @@ All 7 agents are now fully integrated with **copilot-instructions.md** and **Zen
 - ✅ Tools: All 8 Zen Tasks tools + memory tools
 
 #### 2. **Smart Plan** (Planning Specialist)
+
 - ✅ Receives goal from Full Auto
 - ✅ Detects vagueness with QA survey
 - ✅ Creates subtasks in Zen Tasks via `addTask()`
@@ -23,6 +25,7 @@ All 7 agents are now fully integrated with **copilot-instructions.md** and **Zen
 - ✅ 2-module system: CHECKLIST + ORCHESTRATOR
 
 #### 3. **Smart Execute** (Execution Specialist)
+
 - ✅ Gets pending tasks from Zen Tasks
 - ✅ Executes each task using terminal/file/VS Code tools
 - ✅ Updates status via `setTaskStatus()` after each task
@@ -33,6 +36,7 @@ All 7 agents are now fully integrated with **copilot-instructions.md** and **Zen
 - ✅ 2-module system: CHECKLIST + ORCHESTRATOR
 
 #### 4. **Smart Review** (Review Specialist)
+
 - ✅ Lists completed & failed tasks from Zen Tasks
 - ✅ Performs pattern analysis & root-cause analysis
 - ✅ Updates task insights via `updateTask()`
@@ -42,6 +46,7 @@ All 7 agents are now fully integrated with **copilot-instructions.md** and **Zen
 - ✅ 2-module system: CHECKLIST + ORCHESTRATOR
 
 #### 5. **Agent Builder & Updater** (Meta-Agent)
+
 - ✅ Creates/updates agents with 2-module system
 - ✅ Preserves tool access & handoffs
 - ✅ Validates Zen Tasks integration
@@ -51,6 +56,7 @@ All 7 agents are now fully integrated with **copilot-instructions.md** and **Zen
 - ✅ Tools: All 8 Zen Tasks tools + file operations
 
 #### 6. **Tool Builder** (Tool Creation Specialist)
+
 - ✅ Designs MCP tool specs
 - ✅ Implements tools with validation
 - ✅ Tests with minimal runnable tests
@@ -59,6 +65,7 @@ All 7 agents are now fully integrated with **copilot-instructions.md** and **Zen
 - ✅ 2-module system: CHECKLIST + ORCHESTRATOR
 
 #### 7. **Smart Prep Cloud** (Cloud Execution Preparation)
+
 - ✅ Validates environment readiness
 - ✅ Generates GitHub Issues with exact commands
 - ✅ Calculates Cloud Confidence (0-100%)
@@ -70,6 +77,7 @@ All 7 agents are now fully integrated with **copilot-instructions.md** and **Zen
 ### Zen Tasks Integration
 
 #### All Agents Use
+
 - ✅ `loadWorkflowContext()` - Load project state
 - ✅ `listTasks()` - Get tasks by status/filter
 - ✅ `getNextTask()` - Get executable tasks in priority order
@@ -80,8 +88,10 @@ All 7 agents are now fully integrated with **copilot-instructions.md** and **Zen
 - ✅ `parseRequirements()` - Structure goals into tasks
 
 #### Test Sync Pattern
+
 All agents implement:
-```
+
+```text
 1. Load Zen context
 2. Get next tasks
 3. Perform work
@@ -92,6 +102,7 @@ All agents implement:
 ### Memory Organization
 
 **Namespace Structure:**
+
 - `/memories/dev/full-auto/` - Hub state & routing decisions
 - `/memories/dev/smart-plan/` - Planning analysis & vagueness scores
 - `/memories/dev/smart-execute/` - Execution logs & error traces
@@ -102,7 +113,9 @@ All agents implement:
 - `/memories/dev/shared/` - Cross-agent shared state
 
 **Observation Logging:**
+
 All agents log observations including:
+
 - Task status updates
 - Success messages
 - Error messages with context
@@ -113,6 +126,7 @@ All agents log observations including:
 ### Copilot Instructions Integration
 
 #### Updated to Include
+
 - ✅ AAA Weird App Demo project context
 - ✅ Full Auto workflow execution guide
 - ✅ All 7 agent descriptions & modes
@@ -125,6 +139,7 @@ All agents log observations including:
 - ✅ Agent modes & guardrails
 
 #### Removed (Replaced)
+
 - ❌ AutoGen Python framework references
 - ❌ Generic Python/Java development workflows
 - ❌ Multiple project context (now project-specific)
@@ -133,6 +148,7 @@ All agents log observations including:
 ### Workflow Execution
 
 **User Starts Here:**
+
 1. Open Full Auto agent
 2. See task queue from Zen Tasks
 3. Click "Plan Phase" → Smart Plan creates subtasks
@@ -141,6 +157,7 @@ All agents log observations including:
 6. Click "Done" or "Replan" → Back to Full Auto
 
 **No Manual Task Management Needed:**
+
 - ✅ All tasks in Zen Tasks (single source of truth)
 - ✅ No internal to-do lists in agents
 - ✅ Status automatically updated
@@ -150,6 +167,7 @@ All agents log observations including:
 ### .NET Project Integration
 
 **Project-Specific Setup:**
+
 - ✅ Windows PowerShell scripts (`dotnet-install.ps1`)
 - ✅ `.NET 9.0 SDK` requirement in instructions
 - ✅ Path configuration for Windows (`AppData\Local\Microsoft\dotnet`)
@@ -158,7 +176,8 @@ All agents log observations including:
 - ✅ Build/format/test commands for C#
 
 **Server Structure:**
-```
+
+```text
 server/
 ├── CloudWatcher/       # Main API server
 │   ├── Program.cs      # Startup & configuration
@@ -173,6 +192,7 @@ server/
 ### Quality Assurance
 
 #### Each Agent Has
+
 - ✅ 2-module reasoning system (CHECKLIST + ORCHESTRATOR)
 - ✅ All 8 Zen Tasks tools in tools list
 - ✅ Proper memory namespace setup
@@ -183,6 +203,7 @@ server/
 - ✅ No MODULE 1 or MODULE 4
 
 #### Copilot Instructions Validates
+
 - ✅ Project context is specific to AAA Weird App Demo
 - ✅ Workflow patterns align with agent architecture
 - ✅ Memory namespaces match agent memory organization
@@ -194,12 +215,14 @@ server/
 ## Ready for Use
 
 **Start workflow with:**
-```
+
+```text
 Go to .github/agents/Full Auto New.agent.md
 Mention "Full Auto" or click the agent
 ```
 
 **Workflow is automatic:**
+
 - ✅ Load Zen Tasks context
 - ✅ Display task queue
 - ✅ Route to specialists
@@ -208,6 +231,7 @@ Mention "Full Auto" or click the agent
 - ✅ Maintain single source of truth
 
 **No manual intervention needed for:**
+
 - ✅ Task tracking
 - ✅ Memory management
 - ✅ Status updates

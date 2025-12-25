@@ -245,3 +245,4 @@ C:\Users\weird\AAA Weird App Demmo\server\CloudWatcher\obj\Debug\net10.0\CloudWa
 C:\Users\weird\AAA Weird App Demmo\server\CloudWatcher\obj\Debug\net10.0\CloudWatcher.genruntimeconfig.cache
 C:\Users\weird\AAA Weird App Demmo\server\CloudWatcher\obj\Debug\net10.0\ref\CloudWatcher.dll
 C:\Users\weird\AAA Weird App Demmo\server\CloudWatcher\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\weird\AAA Weird App Demmo\server\CloudWatcher\bin\Debug\net10.0\appsettings.Production.json
