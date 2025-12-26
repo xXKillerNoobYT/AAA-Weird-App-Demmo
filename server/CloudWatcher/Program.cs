@@ -179,8 +179,14 @@ using (var scope = app.Services.CreateScope())
 {
     try
     {
+        var env = app.Environment;
         var db = scope.ServiceProvider.GetRequiredService<CloudWatcher.Data.CloudWatcherContext>();
-        db.Database.Migrate();
+        
+        // Skip migrations in Test environment (uses in-memory database)
+        if (env.EnvironmentName != "Test")
+        {
+            db.Database.Migrate();
+        }
         
         // Check for --seed-wave4 command-line argument
         if (args.Contains("--seed-wave4"))

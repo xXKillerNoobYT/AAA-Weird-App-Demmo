@@ -1,54 +1,35 @@
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using CloudWatcher.Data;
+using System.Net.Http.Headers;
+using CloudWatcher.Tests.Fixtures;
 using Xunit;
 
 namespace CloudWatcher.Tests.Integration;
 
 /// <summary>
-/// Base class for integration tests that provides WebApplicationFactory setup
-/// with an in-memory database for testing.
+/// Base class for integration tests.
+/// Uses TestWebApplicationFactory which is preconfigured for testing with
+/// in-memory database and JWT token support.
 /// </summary>
-public class IntegrationTestBase : IClassFixture<WebApplicationFactory<Program>>
+public class IntegrationTestBase : IClassFixture<TestWebApplicationFactory>
 {
-    protected readonly WebApplicationFactory<Program> Factory;
+    protected readonly TestWebApplicationFactory Factory;
     protected readonly HttpClient Client;
 
-    public IntegrationTestBase(WebApplicationFactory<Program> factory)
+    public IntegrationTestBase(TestWebApplicationFactory factory)
     {
-        Factory = factory.WithWebHostBuilder(builder =>
-        {
-            // Force the application to use the in-memory database by clearing the connection string
-            builder.UseSetting("ConnectionStrings:DefaultConnection", string.Empty);
-
-            builder.ConfigureServices(services =>
-            {
-                // Remove the existing DbContext registration (e.g., Npgsql) to avoid dual provider conflicts
-                var descriptor = services.SingleOrDefault(
-                    d => d.ServiceType == typeof(DbContextOptions<CloudWatcherContext>));
-                
-                if (descriptor != null)
-                {
-                    services.Remove(descriptor);
-                }
-
-                // Add DbContext using in-memory database for testing
-                services.AddDbContext<CloudWatcherContext>(options =>
-                {
-                    options.UseInMemoryDatabase("TestDatabase");
-                });
-
-                // Build service provider and ensure database is created
-                var sp = services.BuildServiceProvider();
-                using (var scope = sp.CreateScope())
-                {
-                    var db = scope.ServiceProvider.GetRequiredService<CloudWatcherContext>();
-                    db.Database.EnsureCreated();
-                }
-            });
-        });
-
+        Factory = factory ?? throw new ArgumentNullException(nameof(factory));
         Client = Factory.CreateClient();
+    }
+
+    /// <summary>
+    /// Set authorization token on HttpClient for authenticated requests.
+    /// </summary>
+    protected void SetAuthorizationToken(string? userId = null, string? email = null)
+    {
+        var token = TestJwtTokenBuilder.GenerateToken(
+            userId ?? "test-user-id",
+            email ?? "test@example.com"
+        );
+        Client.DefaultRequestHeaders.Authorization = 
+            new AuthenticationHeaderValue("Bearer", token);
     }
 }

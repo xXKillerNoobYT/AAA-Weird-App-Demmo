@@ -24,7 +24,7 @@ namespace CloudWatcher.Tests.Integration
     {
         private readonly ITestOutputHelper _output;
 
-        public InventoryControllerV2Tests(WebApplicationFactory<Program> factory, ITestOutputHelper output) 
+        public InventoryControllerV2Tests(TestWebApplicationFactory factory, ITestOutputHelper output) 
             : base(factory)
         {
             _output = output;
@@ -36,6 +36,9 @@ namespace CloudWatcher.Tests.Integration
         [Fact]
         public async Task GetPartById_ValidPartId_Returns200WithDetails()
         {
+            // Arrange - set authorization
+            SetAuthorizationToken();
+
             // Arrange - seed database with test data
             var partId = Guid.NewGuid();
             var locationId1 = Guid.NewGuid();
@@ -171,6 +174,9 @@ namespace CloudWatcher.Tests.Integration
         [Fact]
         public async Task GetPartById_InvalidUUID_Returns400()
         {
+            // Arrange - set authorization
+            SetAuthorizationToken();
+
             // Act - call with invalid UUID
             var response = await Client.GetAsync("/api/v2/inventory/not-a-valid-uuid");
 
@@ -189,6 +195,9 @@ namespace CloudWatcher.Tests.Integration
         [Fact]
         public async Task GetPartById_MissingPart_Returns404()
         {
+            // Arrange - set authorization
+            SetAuthorizationToken();
+
             // Arrange - use a valid UUID that doesn't exist
             var nonExistentPartId = Guid.NewGuid();
 
@@ -210,6 +219,9 @@ namespace CloudWatcher.Tests.Integration
         [Fact]
         public async Task GetPartById_WithoutIncludeArchived_ExcludesArchivedVariants()
         {
+            // Arrange - set authorization
+            SetAuthorizationToken();
+
             // Arrange - seed database with archived variant
             var partId = Guid.NewGuid();
             var locationId = Guid.NewGuid();
@@ -299,6 +311,9 @@ namespace CloudWatcher.Tests.Integration
         [Fact]
         public async Task GetPartById_WithIncludeArchived_IncludesArchivedVariants()
         {
+            // Arrange - set authorization
+            SetAuthorizationToken();
+
             // Arrange - seed database (reuse setup from previous test)
             var partId = Guid.NewGuid();
             var locationId = Guid.NewGuid();
@@ -389,6 +404,9 @@ namespace CloudWatcher.Tests.Integration
         [Fact]
         public async Task GetPartById_WithLowStockLocation_IndicatesLowStock()
         {
+            // Arrange - set authorization
+            SetAuthorizationToken();
+
             // Arrange - seed with low stock inventory
             var partId = Guid.NewGuid();
             var locationId = Guid.NewGuid();

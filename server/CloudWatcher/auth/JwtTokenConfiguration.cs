@@ -20,6 +20,7 @@ public static class JwtTokenConfiguration
         var authConfig = configuration.GetSection("Authentication");
         var authority = authConfig["Authority"];
         var audience = authConfig["Audience"];
+        var jwtSecret = authConfig["Jwt:Secret"];
         var enableLocalJwtValidation = authConfig.GetValue<bool>("EnableLocalJwtValidation", true);
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -38,7 +39,7 @@ public static class JwtTokenConfiguration
                 }
 
                 // Token validation parameters
-                options.TokenValidationParameters = new TokenValidationParameters
+                var tokenValidationParams = new TokenValidationParameters
                 {
                     // Validate the token signature
                     ValidateIssuerSigningKey = true,
@@ -58,6 +59,30 @@ public static class JwtTokenConfiguration
                     // Require expiration claim
                     RequireExpirationTime = true,
                 };
+
+                // For test/local JWT validation: provide signing key directly
+                if (!string.IsNullOrEmpty(jwtSecret))
+                {
+                    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
+                    tokenValidationParams.IssuerSigningKey = key;
+                    tokenValidationParams.ValidateIssuerSigningKey = true;
+                    
+                    // Also validate issuer and audience for test tokens
+                    var issuer = authConfig["Jwt:Issuer"];
+                    var testAudience = authConfig["Jwt:Audience"];
+                    if (!string.IsNullOrEmpty(issuer))
+                    {
+                        tokenValidationParams.ValidateIssuer = true;
+                        tokenValidationParams.ValidIssuer = issuer;
+                    }
+                    if (!string.IsNullOrEmpty(testAudience))
+                    {
+                        tokenValidationParams.ValidateAudience = true;
+                        tokenValidationParams.ValidAudience = testAudience;
+                    }
+                }
+
+                options.TokenValidationParameters = tokenValidationParams;
 
                 // Optional: Configure event handlers for debugging/custom logic
                 options.Events = new JwtBearerEvents
